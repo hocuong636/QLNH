@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "500380249110",
+    "firebase_url": "https://quanlynhahang-d858b-default-rtdb.asia-southeast1.firebasedatabase.app",
+    "project_id": "quanlynhahang-d858b",
+    "storage_bucket": "quanlynhahang-d858b.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:500380249110:android:8068ea20b396bab2f3d937",
+        "android_client_info": {
+          "package_name": "com.example.quanlynhahang"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBl7u72t4Ak_dll4Qi_cmVOSFqbcHt1ZfI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
