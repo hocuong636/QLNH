@@ -100,6 +100,16 @@ class AuthService {
             phoneNumber: userData['phoneNumber'] ?? '',
           );
           
+          // Lưu lịch sử đăng nhập
+          try {
+            await _database.ref('users/${userCredential.user!.uid}/loginHistory').push().set({
+              'loginAt': DateTime.now().toIso8601String(),
+              'method': 'email',
+            });
+          } catch (e) {
+            print('Lỗi khi lưu lịch sử đăng nhập: $e');
+          }
+          
           print('Lưu dữ liệu vào local storage thành công');
         } catch (dbError) {
           print('Lỗi khi lấy dữ liệu từ database: $dbError');
@@ -214,6 +224,16 @@ class AuthService {
           role: userRole,
           phoneNumber: phoneNumber,
         );
+        
+        // Lưu lịch sử đăng nhập
+        try {
+          await _database.ref('users/${user.uid}/loginHistory').push().set({
+            'loginAt': DateTime.now().toIso8601String(),
+            'method': 'google',
+          });
+        } catch (e) {
+          print('Lỗi khi lưu lịch sử đăng nhập: $e');
+        }
         
         print('Lưu thông tin user vào local storage thành công với role: $userRole');
       }

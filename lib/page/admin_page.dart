@@ -3,8 +3,11 @@ import 'package:firebase_database/firebase_database.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:quanlynhahang/services/auth_service.dart';
 import 'package:quanlynhahang/constants/user_roles.dart';
+import 'package:quanlynhahang/constants/restaurant_status.dart';
 import 'owner_management_page.dart';
 import 'restaurant_management_page.dart';
+import 'subscription_management_page.dart';
+import 'system_settings_page.dart';
 
 class AdminPage extends StatefulWidget {
   const AdminPage({super.key});
@@ -65,6 +68,8 @@ class _AdminPageState extends State<AdminPage> {
       _buildDashboardPage(),
       const OwnerManagementPage(),
       const RestaurantManagementPage(),
+      const SubscriptionManagementPage(),
+      const SystemSettingsPage(),
     ];
 
     return Scaffold(
@@ -98,8 +103,8 @@ class _AdminPageState extends State<AdminPage> {
         type: BottomNavigationBarType.fixed,
         selectedItemColor: Colors.blue.shade700,
         unselectedItemColor: Colors.grey.shade600,
-        selectedFontSize: 12,
-        unselectedFontSize: 12,
+        selectedFontSize: 11,
+        unselectedFontSize: 11,
         elevation: 8,
         backgroundColor: Colors.white,
         items: const [
@@ -111,73 +116,115 @@ class _AdminPageState extends State<AdminPage> {
           BottomNavigationBarItem(
             icon: Icon(Icons.person_outline),
             activeIcon: Icon(Icons.person),
-            label: 'Quản Lý Owner',
+            label: 'Owner',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.restaurant_outlined),
             activeIcon: Icon(Icons.restaurant),
-            label: 'Quản Lý Nhà Hàng',
+            label: 'Nhà Hàng',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.card_membership_outlined),
+            activeIcon: Icon(Icons.card_membership),
+            label: 'Gói DV',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.settings_outlined),
+            activeIcon: Icon(Icons.settings),
+            label: 'Cài Đặt',
           ),
         ],
       ),
     );
   }
 
-  Widget _buildDashboardPage() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(20.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const SizedBox(height: 10),
-          const Text(
-            'Dashboard',
-            style: TextStyle(
-              fontSize: 28,
-              fontWeight: FontWeight.bold,
-              color: Colors.black87,
-            ),
+Widget _buildDashboardPage() {
+  return SingleChildScrollView(
+    padding: const EdgeInsets.all(20.0),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(height: 10),
+        const Text(
+          'Dashboard',
+          style: TextStyle(
+            fontSize: 28,
+            fontWeight: FontWeight.bold,
+            color: Colors.black87,
           ),
-          const SizedBox(height: 8),
-          Text(
-            'Tổng quan hệ thống',
-            style: TextStyle(
-              fontSize: 16,
-              color: Colors.grey.shade600,
-            ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Tổng quan hệ thống',
+          style: TextStyle(
+            fontSize: 16,
+            color: Colors.grey.shade600,
           ),
-          const SizedBox(height: 30),
-          // Statistic Cards
-          _buildStatCard(
-            title: 'Tổng Người Dùng',
-            icon: Icons.people_outline,
-            color: Colors.blue,
-            stream: _dbRef.child('users').onValue,
-          ),
-          const SizedBox(height: 16),
-          _buildStatCard(
-            title: 'Tổng Nhà Hàng',
-            icon: Icons.restaurant_outlined,
-            color: Colors.green,
-            stream: _dbRef.child('restaurants').onValue,
-          ),
-          const SizedBox(height: 16),
-          _buildStatCard(
-            title: 'Tổng Đơn Hàng',
-            icon: Icons.shopping_cart_outlined,
-            color: Colors.orange,
-            stream: _dbRef.child('orders').onValue,
-          ),
-        ],
-      ),
-    );
-  }
+        ),
+        const SizedBox(height: 30),
+
+        /// Tổng người dùng
+        _buildStatCard(
+          title: 'Tổng Người Dùng',
+          icon: Icons.people_outline,
+          color: Colors.blue,
+          stream: _dbRef.child('users').onValue,
+        ),
+
+        const SizedBox(height: 16),
+
+        /// Nhà hàng đang hoạt động
+        _buildStatCard(
+          title: 'Nhà Hàng Đang Hoạt Động',
+          icon: Icons.restaurant,
+          color: Colors.green,
+          stream: _dbRef.child('restaurants').onValue,
+          filter: (data) {
+            if (data is! Map) return 0;
+            int count = 0;
+            data.forEach((key, value) {
+              if (value is Map) {
+                final status = value['status']?.toString();
+                if (status == RestaurantStatus.active) {
+                  count++;
+                }
+              }
+            });
+            return count;
+          },
+        ),
+
+        const SizedBox(height: 16),
+
+        /// Tổng nhà hàng
+        _buildStatCard(
+          title: 'Tổng Nhà Hàng',
+          icon: Icons.restaurant_outlined,
+          color: Colors.blue,
+          stream: _dbRef.child('restaurants').onValue,
+        ),
+
+        const SizedBox(height: 16),
+
+        /// Tổng đơn hàng
+        _buildStatCard(
+          title: 'Tổng Đơn Hàng',
+          icon: Icons.shopping_cart_outlined,
+          color: Colors.orange,
+          stream: _dbRef.child('orders').onValue,
+        ),
+      ],
+    ),
+  );
+}
+
 
   Widget _buildStatCard({
     required String title,
     required IconData icon,
     required Color color,
     required Stream<DatabaseEvent> stream,
+    int Function(dynamic)? filter,
   }) {
     return Card(
       elevation: 2,
@@ -247,10 +294,11 @@ class _AdminPageState extends State<AdminPage> {
                         final data = snapshot.data!.snapshot.value;
                         int count = 0;
                         if (data != null) {
-                          if (data is Map) {
+                          if (filter != null) {
+                            count = filter(data);
+                          } else if (data is Map) {
                             count = data.length;
                             print('StatCard [$title]: Found $count items (Map)');
-                            // Debug: In ra một vài keys đầu tiên
                             if (count > 0) {
                               final keys = data.keys.take(3).toList();
                               print('StatCard [$title]: Sample keys: $keys');
@@ -260,7 +308,7 @@ class _AdminPageState extends State<AdminPage> {
                             print('StatCard [$title]: Found $count items (List)');
                           } else {
                             print('StatCard [$title]: Data type is ${data.runtimeType}, value: $data');
-                            count = 1; // Nếu có giá trị nhưng không phải Map/List
+                            count = 1;
                           }
                         } else {
                           print('StatCard [$title]: Data is null');

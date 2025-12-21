@@ -213,6 +213,160 @@ class _OwnerManagementPageState extends State<OwnerManagementPage> {
     );
   }
 
+  Future<void> _resetOwnerPassword(String userId, String email) async {
+    final TextEditingController newPasswordController = TextEditingController();
+    
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Reset Mật Khẩu'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('Reset mật khẩu cho: $email'),
+              const SizedBox(height: 16),
+              TextField(
+                controller: newPasswordController,
+                decoration: const InputDecoration(
+                  labelText: 'Mật khẩu mới',
+                  border: OutlineInputBorder(),
+                ),
+                obscureText: true,
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                newPasswordController.dispose();
+                Navigator.of(context).pop();
+              },
+              child: const Text('Hủy'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                if (newPasswordController.text.isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Vui lòng nhập mật khẩu mới'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                  return;
+                }
+
+                try {
+                  // Gửi email reset password (Firebase Admin SDK không có trong Flutter)
+                  // Thay vào đó, lưu mật khẩu tạm thời vào database để Owner có thể đăng nhập và đổi
+                  await FirebaseAuth.instance.sendPasswordResetEmail(
+                    email: email,
+                  );
+                  
+                  // Lưu lịch sử reset password
+                  await _dbRef.child('users/$userId/passwordResetHistory').push().set({
+                    'resetAt': DateTime.now().toIso8601String(),
+                    'resetBy': 'admin',
+                    'method': 'email_reset',
+                  });
+
+                  newPasswordController.dispose();
+                  Navigator.of(context).pop();
+                  
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Đã gửi email reset mật khẩu đến Owner!'),
+                        backgroundColor: Colors.green,
+                      ),
+                    );
+                  }
+                } catch (e) {
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Lỗi: ${e.toString()}'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                  }
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blue.shade700,
+              ),
+              child: const Text('Reset'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showLoginHistory(String userId, Map<dynamic, dynamic> owner) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Lịch Sử Đăng Nhập'),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: StreamBuilder<DatabaseEvent>(
+              stream: _dbRef.child('users/$userId/loginHistory').onValue,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+
+                if (!snapshot.hasData || 
+                    !snapshot.data!.snapshot.exists ||
+                    snapshot.data!.snapshot.value == null) {
+                  return const Text('Chưa có lịch sử đăng nhập');
+                }
+
+                final data = snapshot.data!.snapshot.value;
+                if (data is! Map) {
+                  return const Text('Không có dữ liệu');
+                }
+
+                final loginHistory = data as Map<dynamic, dynamic>;
+                final historyList = loginHistory.entries.toList()
+                  ..sort((a, b) {
+                    final aTime = a.value['loginAt']?.toString() ?? '';
+                    final bTime = b.value['loginAt']?.toString() ?? '';
+                    return bTime.compareTo(aTime);
+                  });
+
+                return ListView.builder(
+                  shrinkWrap: true,
+                  itemCount: historyList.length > 10 ? 10 : historyList.length,
+                  itemBuilder: (context, index) {
+                    final entry = historyList[index];
+                    final loginData = entry.value as Map<dynamic, dynamic>;
+                    final loginAt = loginData['loginAt']?.toString() ?? 'N/A';
+                    
+                    return ListTile(
+                      leading: const Icon(Icons.login, size: 20),
+                      title: Text('Đăng nhập'),
+                      subtitle: Text(loginAt.length > 19 ? loginAt.substring(0, 19) : loginAt),
+                      dense: true,
+                    );
+                  },
+                );
+              },
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Đóng'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   Future<void> _toggleOwnerStatus(String userId, String currentStatus) async {
     final newStatus = currentStatus == 'active' ? 'inactive' : 'active';
     
@@ -429,13 +583,61 @@ class _OwnerManagementPageState extends State<OwnerManagementPage> {
             ),
           ],
         ),
-        trailing: IconButton(
-          icon: Icon(
-            isActive ? Icons.lock_outline : Icons.lock_open,
-            color: isActive ? Colors.red.shade700 : Colors.green.shade700,
-          ),
-          onPressed: () => _toggleOwnerStatus(ownerId, status),
-          tooltip: isActive ? 'Khóa tài khoản' : 'Mở khóa tài khoản',
+        trailing: PopupMenuButton(
+          icon: const Icon(Icons.more_vert),
+          itemBuilder: (BuildContext context) => [
+            PopupMenuItem(
+              child: const Row(
+                children: [
+                  Icon(Icons.lock_reset, size: 20),
+                  SizedBox(width: 8),
+                  Text('Reset Mật Khẩu'),
+                ],
+              ),
+              onTap: () {
+                Future.delayed(const Duration(milliseconds: 100), () {
+                  _resetOwnerPassword(ownerId, owner['email']);
+                });
+              },
+            ),
+            PopupMenuItem(
+              child: const Row(
+                children: [
+                  Icon(Icons.history, size: 20),
+                  SizedBox(width: 8),
+                  Text('Lịch Sử Đăng Nhập'),
+                ],
+              ),
+              onTap: () {
+                Future.delayed(const Duration(milliseconds: 100), () {
+                  _showLoginHistory(ownerId, owner);
+                });
+              },
+            ),
+            PopupMenuItem(
+              child: Row(
+                children: [
+                  Icon(
+                    isActive ? Icons.lock_outline : Icons.lock_open,
+                    size: 20,
+                    color: isActive ? Colors.red.shade700 : Colors.green.shade700,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    isActive ? 'Khóa Tài Khoản' : 'Mở Khóa Tài Khoản',
+                    style: TextStyle(
+                      color: isActive ? Colors.red.shade700 : Colors.green.shade700,
+                    ),
+                  ),
+                ],
+              ),
+              onTap: () {
+                Future.delayed(const Duration(milliseconds: 100), () {
+                  _toggleOwnerStatus(ownerId, status);
+                });
+              },
+            ),
+          ],
         ),
       ),
     );
