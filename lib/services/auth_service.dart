@@ -4,6 +4,7 @@ import 'package:firebase_database/firebase_database.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 import '../firebase_options.dart';
+import '../constants/user_roles.dart';
 import 'local_storage_service.dart';
 import 'avatar_service.dart';
 
@@ -40,7 +41,7 @@ class AuthService {
         'email': email,
         'fullName': fullName,
         'phoneNumber': phoneNumber,
-        'role': 'order',
+        'role': UserRole.customer, // Mặc định là KHÁCH HÀNG cho đăng ký mới
         'createdAt': DateTime.now().toIso8601String(),
       });
 
@@ -49,7 +50,7 @@ class AuthService {
         userId: userCredential.user!.uid,
         email: email,
         fullName: fullName,
-        role: 'order',
+        role: UserRole.customer,
         phoneNumber: phoneNumber,
       );
 
@@ -95,7 +96,7 @@ class AuthService {
             userId: userCredential.user!.uid,
             email: email,
             fullName: userData['fullName'] ?? '',
-            role: userData['role'] ?? 'order',
+            role: userData['role'] ?? UserRole.customer,
             phoneNumber: userData['phoneNumber'] ?? '',
           );
           
@@ -107,7 +108,7 @@ class AuthService {
             userId: userCredential.user!.uid,
             email: email,
             fullName: '',
-            role: 'order',
+            role: UserRole.customer,
             phoneNumber: '',
           );
         }
@@ -170,7 +171,7 @@ class AuthService {
         DatabaseEvent event = await _database.ref('users/${user.uid}').once();
         bool userExists = event.snapshot.exists;
         
-        String userRole = 'order'; // Role mặc định
+        String userRole = UserRole.customer; // Role mặc định là KHÁCH HÀNG
         String fullName = user.displayName ?? 'Google User';
         String phoneNumber = user.phoneNumber ?? '';
 
@@ -190,7 +191,7 @@ class AuthService {
           // User đã tồn tại, lấy role từ database
           print('User đã tồn tại, lấy thông tin từ database');
           Map<dynamic, dynamic> userData = event.snapshot.value as Map<dynamic, dynamic>? ?? {};
-          userRole = userData['role'] ?? 'order';
+          userRole = userData['role'] ?? UserRole.customer;
           fullName = userData['fullName'] ?? fullName;
           phoneNumber = userData['phoneNumber'] ?? phoneNumber;
           print('Role của user: $userRole');

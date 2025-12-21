@@ -6,6 +6,11 @@ import 'page/signup_page.dart';
 import 'page/login_page.dart';
 import 'page/home_page.dart';
 import 'page/admin_page.dart';
+import 'page/owner_page.dart';
+import 'page/manager_page.dart';
+import 'page/kitchen_page.dart';
+import 'page/cashier_page.dart';
+import 'page/order_page.dart';
 import 'services/local_storage_service.dart';
 
 Future<void>main() async {
@@ -44,6 +49,11 @@ class MyApp extends StatelessWidget {
         '/signup': (context) => const SignUpPage(),
         '/home': (context) => const HomePage(),
         '/admin': (context) => const AdminPage(),
+        '/owner': (context) => const OwnerPage(),
+        '/manager': (context) => const ManagerPage(),
+        '/kitchen': (context) => const KitchenPage(),
+        '/cashier': (context) => const CashierPage(),
+        '/order': (context) => const OrderPage(),
       },
     );
   }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:quanlynhahang/services/auth_service.dart';
 import 'package:quanlynhahang/services/local_storage_service.dart';
+import 'package:quanlynhahang/constants/user_roles.dart';
 import 'signup_page.dart';
 
 class LoginPage extends StatefulWidget {
@@ -44,13 +45,13 @@ class _LoginPageState extends State<LoginPage> {
       );
 
       if (mounted) {
+        // Lấy role từ local storage và điều hướng theo role
+        String? userRole = _localStorageService.getUserRole();
+        String route = UserRole.getRouteForRole(userRole);
+        
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Đăng nhập thành công!')),
         );
-        
-        // Lấy role từ local storage và chuyển hướng phù hợp
-        String? userRole = _localStorageService.getUserRole();
-        String route = userRole == 'admin' ? '/admin' : '/home';
         
         Navigator.of(context).pushReplacementNamed(route);
       }
@@ -302,13 +303,13 @@ class _LoginPageState extends State<LoginPage> {
       await _authService.signInWithGoogle();
 
       if (mounted) {
+        // Lấy role từ local storage và điều hướng theo role
+        String? userRole = _localStorageService.getUserRole();
+        String route = UserRole.getRouteForRole(userRole);
+        
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Đăng nhập Google thành công!')),
         );
-        
-        // Lấy role từ local storage và chuyển hướng phù hợp
-        String? userRole = _localStorageService.getUserRole();
-        String route = userRole == 'admin' ? '/admin' : '/home';
         
         Navigator.of(context).pushReplacementNamed(route);
       }
