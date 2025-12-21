@@ -13,12 +13,7 @@
           "package_name": "com.example.quanlynhahang"
         }
       },
-      "oauth_client": [
-        {
-          "client_id": "500380249110-ch10jmbkncsqnilog6huoq9ap6rje0f3.apps.googleusercontent.com",
-          "client_type": 3
-        }
-      ],
+      "oauth_client": [],
       "api_key": [
         {
           "current_key": "AIzaSyBl7u72t4Ak_dll4Qi_cmVOSFqbcHt1ZfI"
@@ -26,19 +21,7 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": [
-            {
-              "client_id": "500380249110-ch10jmbkncsqnilog6huoq9ap6rje0f3.apps.googleusercontent.com",
-              "client_type": 3
-            },
-            {
-              "client_id": "500380249110-oft26tttfat4pa4htpsh38ubaqqec7dq.apps.googleusercontent.com",
-              "client_type": 2,
-              "ios_info": {
-                "bundle_id": "com.example.quanlynhahang"
-              }
-            }
-          ]
+          "other_platform_oauth_client": []
         }
       }
     }
