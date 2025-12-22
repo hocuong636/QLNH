@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:quanlynhahang/services/auth_service.dart';
 import 'package:quanlynhahang/services/local_storage_service.dart';
 import 'package:quanlynhahang/constants/user_roles.dart';
-import 'profile_page.dart';
+import '../shared/profile_page.dart';
 
 class OrderPage extends StatefulWidget {
   const OrderPage({super.key});

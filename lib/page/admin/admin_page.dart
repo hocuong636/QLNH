@@ -4,10 +4,10 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:quanlynhahang/services/auth_service.dart';
 import 'package:quanlynhahang/constants/user_roles.dart';
 import 'package:quanlynhahang/constants/restaurant_status.dart';
-import 'owner_management_page.dart';
-import 'restaurant_management_page.dart';
-import 'subscription_management_page.dart';
-import 'system_settings_page.dart';
+import '../owner/owner_management_page.dart';
+import '../owner/restaurant_management_page.dart';
+import '../owner/subscription_management_page.dart';
+import '../owner/system_settings_page.dart';
 
 class AdminPage extends StatefulWidget {
   const AdminPage({super.key});

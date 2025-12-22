@@ -2,16 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:quanlynhahang/services/auth_service.dart';
 import 'package:quanlynhahang/services/local_storage_service.dart';
 import 'package:quanlynhahang/constants/user_roles.dart';
-import 'profile_page.dart';
+import '../shared/profile_page.dart';
 
-class OwnerPage extends StatefulWidget {
-  const OwnerPage({super.key});
+class CashierPage extends StatefulWidget {
+  const CashierPage({super.key});
 
   @override
-  State<OwnerPage> createState() => _OwnerPageState();
+  State<CashierPage> createState() => _CashierPageState();
 }
 
-class _OwnerPageState extends State<OwnerPage> {
+class _CashierPageState extends State<CashierPage> {
   final AuthService _authService = AuthService();
   final LocalStorageService _localStorageService = LocalStorageService();
   int _selectedIndex = 0;
@@ -50,7 +50,6 @@ class _OwnerPageState extends State<OwnerPage> {
   @override
   Widget build(BuildContext context) {
     String? userName = _localStorageService.getUserName();
-    String? userRole = _localStorageService.getUserRole();
     
     List<Widget> pages = [
       _buildDashboardPage(userName),
@@ -60,7 +59,7 @@ class _OwnerPageState extends State<OwnerPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          'Xin chào, ${userName ?? 'Owner'}',
+          'Xin chào, ${userName ?? 'Thu Ngân'}',
           style: const TextStyle(
             fontWeight: FontWeight.w600,
             fontSize: 18,
@@ -90,9 +89,9 @@ class _OwnerPageState extends State<OwnerPage> {
         unselectedItemColor: Colors.grey.shade600,
         items: const [
           BottomNavigationBarItem(
-            icon: Icon(Icons.dashboard_outlined),
-            activeIcon: Icon(Icons.dashboard),
-            label: 'Trang Chủ',
+            icon: Icon(Icons.point_of_sale_outlined),
+            activeIcon: Icon(Icons.point_of_sale),
+            label: 'Thanh Toán',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.person_outline),
@@ -121,7 +120,7 @@ class _OwnerPageState extends State<OwnerPage> {
           ),
           const SizedBox(height: 8),
           Text(
-            'Quản lý nhà hàng của bạn',
+            'Quản lý thanh toán',
             style: TextStyle(
               fontSize: 16,
               color: Colors.grey.shade600,
@@ -151,7 +150,7 @@ class _OwnerPageState extends State<OwnerPage> {
                   ),
                   const SizedBox(height: 12),
                   Text(
-                    'Các chức năng quản lý nhà hàng sẽ được cập nhật sớm.',
+                    'Các chức năng thanh toán sẽ được cập nhật sớm.',
                     style: TextStyle(
                       fontSize: 14,
                       color: Colors.grey.shade600,
