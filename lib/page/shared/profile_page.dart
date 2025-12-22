@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:quanlynhahang/services/auth_service.dart';
+import 'package:quanlynhahang/constants/user_roles.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -119,6 +120,11 @@ class _ProfilePageState extends State<ProfilePage> {
           icon: Icons.phone,
           title: 'Số Điện Thoại',
           subtitle: _userData?['phoneNumber'] ?? 'Chưa cập nhật',
+        ),
+        _buildProfileInfoTile(
+          icon: Icons.badge,
+          title: 'Vai trò',
+          subtitle: UserRole.getDisplayName(_userData?['role']),
         ),
         const Divider(),
         const SizedBox(height: 20),

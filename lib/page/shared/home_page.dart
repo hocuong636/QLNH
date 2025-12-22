@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:quanlynhahang/services/auth_service.dart';
-import 'profile_page.dart';
+import '../shared/profile_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});

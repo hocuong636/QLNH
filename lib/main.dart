@@ -2,10 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'firebase_options.dart';
-import 'page/signup_page.dart';
-import 'page/login_page.dart';
-import 'page/home_page.dart';
-import 'page/admin_page.dart';
+import 'page/auth/signup_page.dart';
+import 'page/auth/login_page.dart';
+import 'page/shared/home_page.dart';
+import 'page/admin/admin_page.dart';
+import 'page/owner/owner_page.dart';
+import 'page/manager/manager_page.dart';
+import 'page/kitchen/kitchen_page.dart';
+import 'page/cashier/cashier_page.dart';
+import 'page/order/order_page.dart';
 import 'services/local_storage_service.dart';
 
 Future<void>main() async {
@@ -44,6 +49,11 @@ class MyApp extends StatelessWidget {
         '/signup': (context) => const SignUpPage(),
         '/home': (context) => const HomePage(),
         '/admin': (context) => const AdminPage(),
+        '/owner': (context) => const OwnerPage(),
+        '/manager': (context) => const ManagerPage(),
+        '/kitchen': (context) => const KitchenPage(),
+        '/cashier': (context) => const CashierPage(),
+        '/order': (context) => const OrderPage(),
       },
     );
   }
