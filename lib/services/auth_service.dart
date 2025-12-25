@@ -41,7 +41,7 @@ class AuthService {
         'email': email,
         'fullName': fullName,
         'phoneNumber': phoneNumber,
-        'role': UserRole.customer, // Mặc định là KHÁCH HÀNG cho đăng ký mới
+        'role': UserRole.order,
         'createdAt': DateTime.now().toIso8601String(),
       });
 
@@ -50,7 +50,7 @@ class AuthService {
         userId: userCredential.user!.uid,
         email: email,
         fullName: fullName,
-        role: UserRole.customer,
+        role: UserRole.order,
         phoneNumber: phoneNumber,
       );
 
@@ -96,7 +96,7 @@ class AuthService {
             userId: userCredential.user!.uid,
             email: email,
             fullName: userData['fullName'] ?? '',
-            role: userData['role'] ?? UserRole.customer,
+            role: userData['role'] ?? UserRole.order,
             phoneNumber: userData['phoneNumber'] ?? '',
           );
           
@@ -118,7 +118,7 @@ class AuthService {
             userId: userCredential.user!.uid,
             email: email,
             fullName: '',
-            role: UserRole.customer,
+            role: UserRole.order,
             phoneNumber: '',
           );
         }
@@ -181,7 +181,7 @@ class AuthService {
         DatabaseEvent event = await _database.ref('users/${user.uid}').once();
         bool userExists = event.snapshot.exists;
         
-        String userRole = UserRole.customer; // Role mặc định là KHÁCH HÀNG
+        String userRole = UserRole.order; // Role mặc định là KHÁCH HÀNG
         String fullName = user.displayName ?? 'Google User';
         String phoneNumber = user.phoneNumber ?? '';
 
@@ -201,7 +201,7 @@ class AuthService {
           // User đã tồn tại, lấy role từ database
           print('User đã tồn tại, lấy thông tin từ database');
           Map<dynamic, dynamic> userData = event.snapshot.value as Map<dynamic, dynamic>? ?? {};
-          userRole = userData['role'] ?? UserRole.customer;
+          userRole = userData['role'] ?? UserRole.order;
           fullName = userData['fullName'] ?? fullName;
           phoneNumber = userData['phoneNumber'] ?? phoneNumber;
           print('Role của user: $userRole');

@@ -7,9 +7,7 @@ import 'page/auth/login_page.dart';
 import 'page/shared/home_page.dart';
 import 'page/admin/admin_page.dart';
 import 'page/owner/owner_page.dart';
-import 'page/manager/manager_page.dart';
 import 'page/kitchen/kitchen_page.dart';
-import 'page/cashier/cashier_page.dart';
 import 'page/order/order_page.dart';
 import 'services/local_storage_service.dart';
 
@@ -50,9 +48,7 @@ class MyApp extends StatelessWidget {
         '/home': (context) => const HomePage(),
         '/admin': (context) => const AdminPage(),
         '/owner': (context) => const OwnerPage(),
-        '/manager': (context) => const ManagerPage(),
         '/kitchen': (context) => const KitchenPage(),
-        '/cashier': (context) => const CashierPage(),
         '/order': (context) => const OrderPage(),
       },
     );

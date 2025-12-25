@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_database/firebase_database.dart';
-import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class SystemSettingsPage extends StatefulWidget {
   const SystemSettingsPage({super.key});
@@ -10,21 +10,16 @@ class SystemSettingsPage extends StatefulWidget {
 }
 
 class _SystemSettingsPageState extends State<SystemSettingsPage> {
-  FirebaseDatabase get _database {
-    return FirebaseDatabase.instanceFor(
-      app: Firebase.app(),
-      databaseURL: 'https://quanlynhahang-d858b-default-rtdb.asia-southeast1.firebasedatabase.app',
-    );
-  }
-  
-  DatabaseReference get _dbRef => _database.ref();
-  
+  final TextEditingController _taxRateController = TextEditingController();
   final TextEditingController _currencyController = TextEditingController();
-  final TextEditingController _timezoneController = TextEditingController();
-  final TextEditingController _vatController = TextEditingController();
-  String? _selectedCurrency;
-  String? _selectedTimezone;
-  double? _vatRate;
+  final TextEditingController _notificationTitleController =
+      TextEditingController();
+  final TextEditingController _notificationMessageController =
+      TextEditingController();
+
+  Map<String, dynamic> _settings = {};
+  bool _isLoading = true;
+  bool _isSaving = false;
 
   @override
   void initState() {
@@ -34,316 +29,438 @@ class _SystemSettingsPageState extends State<SystemSettingsPage> {
 
   @override
   void dispose() {
+    _taxRateController.dispose();
     _currencyController.dispose();
-    _timezoneController.dispose();
-    _vatController.dispose();
+    _notificationTitleController.dispose();
+    _notificationMessageController.dispose();
     super.dispose();
   }
 
   Future<void> _loadSettings() async {
+    setState(() => _isLoading = true);
+
     try {
-      final snapshot = await _dbRef.child('systemSettings').get();
+      final database = FirebaseDatabase.instanceFor(
+        app: FirebaseAuth.instance.app,
+        databaseURL:
+            'https://quanlynhahang-d858b-default-rtdb.asia-southeast1.firebasedatabase.app',
+      );
+
+      final snapshot = await database.ref('system_settings').get();
+
       if (snapshot.exists) {
-        final settings = snapshot.value as Map<dynamic, dynamic>;
-        setState(() {
-          _selectedCurrency = settings['currency'] ?? 'VND';
-          _selectedTimezone = settings['timezone'] ?? 'Asia/Ho_Chi_Minh';
-          _vatRate = settings['vatRate']?.toDouble() ?? 10.0;
-          _currencyController.text = _selectedCurrency ?? 'VND';
-          _timezoneController.text = _selectedTimezone ?? 'Asia/Ho_Chi_Minh';
-          _vatController.text = _vatRate?.toString() ?? '10';
-        });
+        final data = snapshot.value;
+        if (data is Map<dynamic, dynamic>) {
+          setState(() {
+            _settings = Map<String, dynamic>.from(data);
+            _taxRateController.text = (_settings['taxRate'] ?? 0.0).toString();
+            _currencyController.text = _settings['currency'] ?? 'VND';
+          });
+        } else {
+          // Handle case where data is not a Map (e.g., it's a primitive value or null)
+          print('Warning: system_settings data is not a Map, using defaults');
+          setState(() {
+            _settings = {
+              'taxRate': 0.0,
+              'currency': 'VND',
+              'notifications': [],
+            };
+            _taxRateController.text = '0.0';
+            _currencyController.text = 'VND';
+          });
+        }
       } else {
-        // Set defaults
+        // Default settings if no data exists
         setState(() {
-          _selectedCurrency = 'VND';
-          _selectedTimezone = 'Asia/Ho_Chi_Minh';
-          _vatRate = 10.0;
+          _settings = {'taxRate': 0.0, 'currency': 'VND', 'notifications': []};
+          _taxRateController.text = '0.0';
           _currencyController.text = 'VND';
-          _timezoneController.text = 'Asia/Ho_Chi_Minh';
-          _vatController.text = '10';
         });
       }
+
+      setState(() => _isLoading = false);
     } catch (e) {
       print('Error loading settings: $e');
+      setState(() => _isLoading = false);
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Lỗi tải cài đặt hệ thống: $e')));
+      }
     }
   }
 
   Future<void> _saveSettings() async {
+    setState(() => _isSaving = true);
+
     try {
-      await _dbRef.child('systemSettings').set({
-        'currency': _selectedCurrency ?? 'VND',
-        'timezone': _selectedTimezone ?? 'Asia/Ho_Chi_Minh',
-        'vatRate': _vatRate ?? 10.0,
+      final database = FirebaseDatabase.instanceFor(
+        app: FirebaseAuth.instance.app,
+        databaseURL:
+            'https://quanlynhahang-d858b-default-rtdb.asia-southeast1.firebasedatabase.app',
+      );
+
+      final updatedSettings = {
+        ..._settings,
+        'taxRate': double.tryParse(_taxRateController.text) ?? 0.0,
+        'currency': _currencyController.text,
         'updatedAt': DateTime.now().toIso8601String(),
+      };
+
+      await database.ref('system_settings').set(updatedSettings);
+
+      setState(() {
+        _settings = updatedSettings;
+        _isSaving = false;
       });
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Đã lưu cấu hình hệ thống!'),
-            backgroundColor: Colors.green,
-          ),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Lưu cài đặt thành công')));
       }
     } catch (e) {
+      print('Error saving settings: $e');
+      setState(() => _isSaving = false);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Lỗi: ${e.toString()}'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Lỗi lưu cài đặt: $e')));
       }
     }
   }
 
-  void _showNotificationDialog() {
-    final TextEditingController titleController = TextEditingController();
-    final TextEditingController messageController = TextEditingController();
-    
+  Future<void> _sendSystemNotification() async {
+    if (_notificationTitleController.text.isEmpty ||
+        _notificationMessageController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Vui lòng điền đầy đủ tiêu đề và nội dung thông báo'),
+        ),
+      );
+      return;
+    }
+
+    try {
+      final database = FirebaseDatabase.instanceFor(
+        app: FirebaseAuth.instance.app,
+        databaseURL:
+            'https://quanlynhahang-d858b-default-rtdb.asia-southeast1.firebasedatabase.app',
+      );
+
+      final notification = {
+        'title': _notificationTitleController.text,
+        'message': _notificationMessageController.text,
+        'timestamp': DateTime.now().toIso8601String(),
+        'type': 'system',
+      };
+
+      // Add to notifications list
+      final notifications = List<Map<String, dynamic>>.from(
+        _settings['notifications'] ?? [],
+      );
+      notifications.insert(0, notification); // Add to beginning
+
+      // Keep only last 50 notifications
+      if (notifications.length > 50) {
+        notifications.removeRange(50, notifications.length);
+      }
+
+      await database.ref('system_settings/notifications').set(notifications);
+
+      // Clear form
+      _notificationTitleController.clear();
+      _notificationMessageController.clear();
+
+      setState(() {
+        _settings['notifications'] = notifications;
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Gửi thông báo thành công')),
+        );
+        Navigator.of(context).pop(); // Close dialog
+      }
+    } catch (e) {
+      print('Error sending notification: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Lỗi gửi thông báo: $e')));
+      }
+    }
+  }
+
+  void _showSendNotificationDialog() {
     showDialog(
       context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Gửi Thông Báo Hệ Thống'),
-          content: Column(
+      builder: (context) => AlertDialog(
+        title: const Text('Gửi thông báo hệ thống'),
+        content: SingleChildScrollView(
+          child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               TextField(
-                controller: titleController,
+                controller: _notificationTitleController,
                 decoration: const InputDecoration(
-                  labelText: 'Tiêu đề',
-                  border: OutlineInputBorder(),
+                  labelText: 'Tiêu đề thông báo *',
+                  hintText: 'Cập nhật hệ thống',
                 ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 16),
               TextField(
-                controller: messageController,
+                controller: _notificationMessageController,
                 decoration: const InputDecoration(
-                  labelText: 'Nội dung',
-                  border: OutlineInputBorder(),
+                  labelText: 'Nội dung thông báo *',
+                  hintText: 'Thông báo về việc bảo trì hệ thống...',
                 ),
                 maxLines: 4,
               ),
             ],
           ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                titleController.dispose();
-                messageController.dispose();
-                Navigator.of(context).pop();
-              },
-              child: const Text('Hủy'),
-            ),
-            ElevatedButton(
-              onPressed: () async {
-                if (titleController.text.isEmpty || messageController.text.isEmpty) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Vui lòng điền đầy đủ thông tin'),
-                      backgroundColor: Colors.red,
-                    ),
-                  );
-                  return;
-                }
-
-                try {
-                  await _dbRef.child('systemNotifications').push().set({
-                    'title': titleController.text.trim(),
-                    'message': messageController.text.trim(),
-                    'type': 'system',
-                    'createdAt': DateTime.now().toIso8601String(),
-                    'readBy': {},
-                  });
-
-                  titleController.dispose();
-                  messageController.dispose();
-                  Navigator.of(context).pop();
-
-                  if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Đã gửi thông báo hệ thống!'),
-                        backgroundColor: Colors.green,
-                      ),
-                    );
-                  }
-                } catch (e) {
-                  if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('Lỗi: ${e.toString()}'),
-                        backgroundColor: Colors.red,
-                      ),
-                    );
-                  }
-                }
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue.shade700,
-              ),
-              child: const Text('Gửi'),
-            ),
-          ],
-        );
-      },
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Hủy'),
+          ),
+          ElevatedButton(
+            onPressed: _sendSystemNotification,
+            child: const Text('Gửi'),
+          ),
+        ],
+      ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(20.0),
-      child: Column(
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Cài đặt Hệ thống'),
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black87,
+        elevation: 0,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: _loadSettings,
+            tooltip: 'Làm mới',
+          ),
+        ],
+      ),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Tax and Currency Settings
+                  Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Cấu hình Thuế & Tiền tệ',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          TextField(
+                            controller: _taxRateController,
+                            decoration: const InputDecoration(
+                              labelText: 'Thuế suất (%)',
+                              hintText: '10.0',
+                              suffixText: '%',
+                            ),
+                            keyboardType: TextInputType.number,
+                          ),
+                          const SizedBox(height: 16),
+                          TextField(
+                            controller: _currencyController,
+                            decoration: const InputDecoration(
+                              labelText: 'Đơn vị tiền tệ',
+                              hintText: 'VND',
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton(
+                              onPressed: _isSaving ? null : _saveSettings,
+                              child: _isSaving
+                                  ? const SizedBox(
+                                      width: 20,
+                                      height: 20,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                      ),
+                                    )
+                                  : const Text('Lưu cài đặt'),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 24),
+
+                  // System Notifications
+                  Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text(
+                                'Thông báo Hệ thống',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              ElevatedButton.icon(
+                                onPressed: _showSendNotificationDialog,
+                                icon: const Icon(Icons.send),
+                                label: const Text('Gửi thông báo'),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+                          if ((_settings['notifications'] as List?)?.isEmpty ??
+                              true)
+                            Center(
+                              child: Padding(
+                                padding: const EdgeInsets.all(32),
+                                child: Column(
+                                  children: [
+                                    Icon(
+                                      Icons.notifications_none,
+                                      size: 48,
+                                      color: Colors.grey.shade400,
+                                    ),
+                                    const SizedBox(height: 16),
+                                    Text(
+                                      'Chưa có thông báo nào',
+                                      style: TextStyle(
+                                        color: Colors.grey.shade600,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            )
+                          else
+                            ListView.builder(
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              itemCount:
+                                  (_settings['notifications'] as List).length,
+                              itemBuilder: (context, index) {
+                                final notification =
+                                    (_settings['notifications'] as List)[index]
+                                        as Map<String, dynamic>;
+                                final timestamp = DateTime.parse(
+                                  notification['timestamp'],
+                                );
+
+                                return ListTile(
+                                  leading: const CircleAvatar(
+                                    child: Icon(Icons.notifications),
+                                  ),
+                                  title: Text(notification['title'] ?? ''),
+                                  subtitle: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(notification['message'] ?? ''),
+                                      Text(
+                                        '${timestamp.toLocal().toString().split('.')[0]}',
+                                        style: TextStyle(
+                                          color: Colors.grey.shade600,
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              },
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 24),
+
+                  // System Information
+                  Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Thông tin Hệ thống',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          _buildInfoRow('Phiên bản', '1.0.0'),
+                          _buildInfoRow(
+                            'Cập nhật cuối',
+                            _settings['updatedAt'] != null
+                                ? DateTime.parse(
+                                    _settings['updatedAt'],
+                                  ).toLocal().toString().split('.')[0]
+                                : 'Chưa cập nhật',
+                          ),
+                          _buildInfoRow(
+                            'Database URL',
+                            'quanlynhahang-d858b-default-rtdb.asia-southeast1.firebasedatabase.app',
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+    );
+  }
+
+  Widget _buildInfoRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SizedBox(height: 10),
-          const Text(
-            'Cấu Hình Hệ Thống',
-            style: TextStyle(
-              fontSize: 28,
-              fontWeight: FontWeight.bold,
-              color: Colors.black87,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Cấu hình toàn cục cho hệ thống',
-            style: TextStyle(
-              fontSize: 16,
-              color: Colors.grey.shade600,
-            ),
-          ),
-          const SizedBox(height: 30),
-          // Cấu hình chung
-          Card(
-            elevation: 2,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Cấu Hình Chung',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  DropdownButtonFormField<String>(
-                    value: _selectedCurrency,
-                    decoration: const InputDecoration(
-                      labelText: 'Tiền tệ mặc định',
-                      border: OutlineInputBorder(),
-                    ),
-                    items: const [
-                      DropdownMenuItem(value: 'VND', child: Text('VND (Việt Nam Đồng)')),
-                      DropdownMenuItem(value: 'USD', child: Text('USD (Đô la Mỹ)')),
-                      DropdownMenuItem(value: 'EUR', child: Text('EUR (Euro)')),
-                    ],
-                    onChanged: (value) {
-                      setState(() {
-                        _selectedCurrency = value;
-                      });
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  DropdownButtonFormField<String>(
-                    value: _selectedTimezone,
-                    decoration: const InputDecoration(
-                      labelText: 'Múi giờ',
-                      border: OutlineInputBorder(),
-                    ),
-                    items: const [
-                      DropdownMenuItem(value: 'Asia/Ho_Chi_Minh', child: Text('Asia/Ho_Chi_Minh (GMT+7)')),
-                      DropdownMenuItem(value: 'UTC', child: Text('UTC (GMT+0)')),
-                      DropdownMenuItem(value: 'Asia/Bangkok', child: Text('Asia/Bangkok (GMT+7)')),
-                    ],
-                    onChanged: (value) {
-                      setState(() {
-                        _selectedTimezone = value;
-                      });
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  TextField(
-                    controller: _vatController,
-                    decoration: const InputDecoration(
-                      labelText: 'Thuế VAT (%)',
-                      border: OutlineInputBorder(),
-                      helperText: 'Nhập phần trăm VAT (ví dụ: 10)',
-                    ),
-                    keyboardType: TextInputType.number,
-                    onChanged: (value) {
-                      setState(() {
-                        _vatRate = double.tryParse(value);
-                      });
-                    },
-                  ),
-                  const SizedBox(height: 20),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: _saveSettings,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blue.shade700,
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                      ),
-                      child: const Text('Lưu Cấu Hình'),
-                    ),
-                  ),
-                ],
+          SizedBox(
+            width: 120,
+            child: Text(
+              '$label:',
+              style: TextStyle(
+                color: Colors.grey.shade600,
+                fontWeight: FontWeight.w500,
               ),
             ),
           ),
-          const SizedBox(height: 20),
-          // Thông báo hệ thống
-          Card(
-            elevation: 2,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Thông Báo Hệ Thống',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    'Gửi thông báo đến tất cả người dùng trong hệ thống',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey.shade600,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton.icon(
-                      onPressed: _showNotificationDialog,
-                      icon: const Icon(Icons.notifications),
-                      label: const Text('Gửi Thông Báo'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.orange.shade700,
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+          Expanded(
+            child: Text(
+              value,
+              style: const TextStyle(fontWeight: FontWeight.w500),
             ),
           ),
         ],
@@ -351,4 +468,3 @@ class _SystemSettingsPageState extends State<SystemSettingsPage> {
     );
   }
 }
-
