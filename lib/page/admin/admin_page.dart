@@ -3,8 +3,8 @@ import 'package:firebase_database/firebase_database.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:quanlynhahang/services/auth_service.dart';
 import 'package:quanlynhahang/constants/restaurant_status.dart';
-import '../owner/owner_management_page.dart';
-import '../owner/restaurant_management_page.dart';
+import 'owner_management_page.dart';
+import 'restaurant_management_page.dart';
 import '../shared/profile_page.dart';
 
 class AdminPage extends StatefulWidget {
