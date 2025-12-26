@@ -126,6 +126,11 @@ class _ProfilePageState extends State<ProfilePage> {
           title: 'Vai trò',
           subtitle: UserRole.getDisplayName(_userData?['role']),
         ),
+        _buildProfileInfoTile(
+          icon: Icons.restaurant,
+          title: 'Mã Nhà Hàng',
+          subtitle: _userData?['resID'] ?? 'Chưa thuộc nhà hàng nào',
+        ),
         const Divider(),
         const SizedBox(height: 20),
         ElevatedButton.icon(

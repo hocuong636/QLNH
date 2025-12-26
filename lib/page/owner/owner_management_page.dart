@@ -74,6 +74,7 @@ class _OwnerManagementPageState extends State<OwnerManagementPage> {
         'fullName': _fullNameController.text.trim(),
         'phoneNumber': _phoneController.text.trim(),
         'role': UserRole.owner, // 'OWNER'
+        'resID': null, // Owner có thể quản lý nhiều nhà hàng nên resID có thể null
         'status': 'active',
         'createdAt': DateTime.now().toIso8601String(),
       };

@@ -10,6 +10,7 @@ class LocalStorageService {
   static const String _userRoleKey = 'user_role';
   static const String _isLoggedInKey = 'is_logged_in';
   static const String _userPhoneKey = 'user_phone';
+  static const String _userResIdKey = 'user_res_id';
 
   // Initialize SharedPreferences
   static Future<void> init() async {
@@ -23,15 +24,24 @@ class LocalStorageService {
     required String fullName,
     required String role,
     required String phoneNumber,
+    String? resID,
   }) async {
-    await Future.wait([
+    List<Future> futures = [
       _prefs.setString(_userIdKey, userId),
       _prefs.setString(_userEmailKey, email),
       _prefs.setString(_userNameKey, fullName),
       _prefs.setString(_userRoleKey, role),
       _prefs.setString(_userPhoneKey, phoneNumber),
       _prefs.setBool(_isLoggedInKey, true),
-    ]);
+    ];
+    
+    if (resID != null) {
+      futures.add(_prefs.setString(_userResIdKey, resID));
+    } else {
+      futures.add(_prefs.remove(_userResIdKey));
+    }
+    
+    await Future.wait(futures);
   }
 
   // Get user ID
@@ -59,6 +69,11 @@ class LocalStorageService {
     return _prefs.getString(_userPhoneKey);
   }
 
+  // Get user resID
+  String? getUserResId() {
+    return _prefs.getString(_userResIdKey);
+  }
+
   // Check if user is logged in
   bool isLoggedIn() {
     return _prefs.getBool(_isLoggedInKey) ?? false;
@@ -72,6 +87,7 @@ class LocalStorageService {
       _prefs.remove(_userNameKey),
       _prefs.remove(_userRoleKey),
       _prefs.remove(_userPhoneKey),
+      _prefs.remove(_userResIdKey),
       _prefs.remove(_isLoggedInKey),
     ]);
   }

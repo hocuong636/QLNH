@@ -41,7 +41,8 @@ class AuthService {
         'email': email,
         'fullName': fullName,
         'phoneNumber': phoneNumber,
-        'role': UserRole.customer, // Mặc định là KHÁCH HÀNG cho đăng ký mới
+        'role': UserRole.customer,
+        'resID': null,
         'createdAt': DateTime.now().toIso8601String(),
       });
 
@@ -52,6 +53,7 @@ class AuthService {
         fullName: fullName,
         role: UserRole.customer,
         phoneNumber: phoneNumber,
+        resID: null,
       );
 
       return userCredential;
@@ -98,6 +100,7 @@ class AuthService {
             fullName: userData['fullName'] ?? '',
             role: userData['role'] ?? UserRole.customer,
             phoneNumber: userData['phoneNumber'] ?? '',
+            resID: userData['resID'],
           );
           
           // Lưu lịch sử đăng nhập
@@ -120,6 +123,7 @@ class AuthService {
             fullName: '',
             role: UserRole.customer,
             phoneNumber: '',
+            resID: null,
           );
         }
       }
@@ -184,6 +188,7 @@ class AuthService {
         String userRole = UserRole.customer; // Role mặc định là KHÁCH HÀNG
         String fullName = user.displayName ?? 'Google User';
         String phoneNumber = user.phoneNumber ?? '';
+        String? resID;
 
         // Nếu user mới, lưu thông tin vào database
         if (!userExists) {
@@ -195,8 +200,10 @@ class AuthService {
             'phoneNumber': phoneNumber,
             'photoUrl': user.photoURL ?? '',
             'role': userRole,
+            'resID': null, // Mặc định null cho user mới
             'createdAt': DateTime.now().toIso8601String(),
           });
+          resID = null;
         } else {
           // User đã tồn tại, lấy role từ database
           print('User đã tồn tại, lấy thông tin từ database');
@@ -204,6 +211,7 @@ class AuthService {
           userRole = userData['role'] ?? UserRole.customer;
           fullName = userData['fullName'] ?? fullName;
           phoneNumber = userData['phoneNumber'] ?? phoneNumber;
+          resID = userData['resID'];
           print('Role của user: $userRole');
         }
 
@@ -223,6 +231,7 @@ class AuthService {
           fullName: fullName,
           role: userRole,
           phoneNumber: phoneNumber,
+          resID: resID,
         );
         
         // Lưu lịch sử đăng nhập
