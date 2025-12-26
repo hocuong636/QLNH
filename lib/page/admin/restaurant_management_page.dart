@@ -170,6 +170,12 @@ class _RestaurantManagementPageState extends State<RestaurantManagementPage> {
 
       await newRestaurantRef.set(restaurant.toJson());
 
+      // Cập nhật restaurantID cho owner
+      await database.ref('users/$_selectedOwnerId').update({
+        'restaurantID': restaurantId,
+        'updatedAt': DateTime.now().toIso8601String(),
+      });
+
       // Clear form
       _clearForm();
 

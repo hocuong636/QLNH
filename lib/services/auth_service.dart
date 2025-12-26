@@ -42,6 +42,8 @@ class AuthService {
         'fullName': fullName,
         'phoneNumber': phoneNumber,
         'role': UserRole.order,
+        'restaurantID': null,
+        'isActive': true,
         'createdAt': DateTime.now().toIso8601String(),
       });
 
@@ -52,6 +54,7 @@ class AuthService {
         fullName: fullName,
         role: UserRole.order,
         phoneNumber: phoneNumber,
+        restaurantID: null,
       );
 
       return userCredential;
@@ -98,6 +101,7 @@ class AuthService {
             fullName: userData['fullName'] ?? '',
             role: userData['role'] ?? UserRole.order,
             phoneNumber: userData['phoneNumber'] ?? '',
+            restaurantID: userData['restaurantID'],
           );
           
           // Lưu lịch sử đăng nhập
@@ -120,6 +124,7 @@ class AuthService {
             fullName: '',
             role: UserRole.order,
             phoneNumber: '',
+            restaurantID: null,
           );
         }
       }
@@ -195,6 +200,8 @@ class AuthService {
             'phoneNumber': phoneNumber,
             'photoUrl': user.photoURL ?? '',
             'role': userRole,
+            'restaurantID': null,
+            'isActive': true,
             'createdAt': DateTime.now().toIso8601String(),
           });
         } else {
@@ -216,6 +223,13 @@ class AuthService {
           );
         }
 
+        // Lấy restaurantID từ database
+        String? restaurantID;
+        if (userExists) {
+          Map<dynamic, dynamic> userData = event.snapshot.value as Map<dynamic, dynamic>? ?? {};
+          restaurantID = userData['restaurantID'];
+        }
+
         // Lưu thông tin user vào local storage với role đúng
         await _localStorageService.saveUserData(
           userId: user.uid,
@@ -223,6 +237,7 @@ class AuthService {
           fullName: fullName,
           role: userRole,
           phoneNumber: phoneNumber,
+          restaurantID: restaurantID,
         );
         
         // Lưu lịch sử đăng nhập

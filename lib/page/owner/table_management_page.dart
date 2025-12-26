@@ -36,8 +36,13 @@ class _TableManagementPageState extends State<TableManagementPage> {
   Future<void> _loadTables() async {
     setState(() => _isLoading = true);
     try {
-      String ownerId = _localStorageService.getUserId() ?? '';
-      _tables = await _tableService.getTables(ownerId);
+      String? restaurantId = _localStorageService.getRestaurantId();
+      if (restaurantId == null || restaurantId.isEmpty) {
+        _showSnackBar('Bạn chưa được gán vào nhà hàng nào. Vui lòng liên hệ Admin.');
+        setState(() => _isLoading = false);
+        return;
+      }
+      _tables = await _tableService.getTables(restaurantId);
       _filterTables();
     } catch (e) {
       _showSnackBar('Lỗi khi tải danh sách bàn: $e');
@@ -151,12 +156,16 @@ class _TableManagementPageState extends State<TableManagementPage> {
                 }
 
                 try {
-                  String ownerId = _localStorageService.getUserId() ?? '';
+                  String? restaurantId = _localStorageService.getRestaurantId();
+                  if (restaurantId == null || restaurantId.isEmpty) {
+                    _showSnackBar('Bạn chưa được gán vào nhà hàng nào. Vui lòng liên hệ Admin.');
+                    return;
+                  }
                   TableStatus status = _parseStatusString(selectedStatus);
 
                   TableModel updatedTable = TableModel(
                     id: table.id,
-                    ownerId: ownerId,
+                    restaurantID: restaurantId,
                     number: int.parse(numberController.text),
                     capacity: int.parse(capacityController.text),
                     status: status,
@@ -329,15 +338,20 @@ class _TableManagementPageState extends State<TableManagementPage> {
                       setDialogState(() => isAdding = true);
 
                       try {
-                        String ownerId =
-                            _localStorageService.getUserId() ?? '';
+                        String? restaurantId =
+                            _localStorageService.getRestaurantId();
+                        if (restaurantId == null || restaurantId.isEmpty) {
+                          setDialogState(() => isAdding = false);
+                          _showSnackBar('Bạn chưa được gán vào nhà hàng nào. Vui lòng liên hệ Admin.');
+                          return;
+                        }
                         int successCount = 0;
                         int failCount = 0;
 
                         for (int i = 0; i < quantity; i++) {
                           TableModel newTable = TableModel(
                             id: '',
-                            ownerId: ownerId,
+                            restaurantID: restaurantId,
                             number: startNumber + i,
                             capacity: capacity,
                             status: TableStatus.empty,

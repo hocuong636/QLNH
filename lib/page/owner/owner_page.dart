@@ -8,6 +8,7 @@ import 'table_management_page.dart';
 import 'order_management_page.dart';
 import 'inventory_management_page.dart';
 import 'owner_restaurant_management_page.dart';
+import 'staff_management_page.dart';
 
 class OwnerPage extends StatefulWidget {
   const OwnerPage({super.key});
@@ -98,18 +99,6 @@ class _OwnerPageState extends State<OwnerPage> {
           ),
           const Divider(),
           ListTile(
-            leading: const Icon(Icons.restaurant),
-            title: const Text('Quản lý nhà hàng'),
-            onTap: () {
-              Navigator.of(context).pop();
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (context) => const OwnerRestaurantManagementPage(),
-                ),
-              );
-            },
-          ),
-          ListTile(
             leading: const Icon(Icons.restaurant_menu),
             title: const Text('Quản lý thực đơn'),
             onTap: () {
@@ -153,6 +142,18 @@ class _OwnerPageState extends State<OwnerPage> {
               Navigator.of(context).push(
                 MaterialPageRoute(
                   builder: (context) => const InventoryManagementPage(),
+                ),
+              );
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.people),
+            title: const Text('Quản lý nhân viên'),
+            onTap: () {
+              Navigator.of(context).pop();
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => const StaffManagementPage(),
                 ),
               );
             },
@@ -320,19 +321,6 @@ class _OwnerPageState extends State<OwnerPage> {
           const SizedBox(height: 16),
 
           _buildManagementCard(
-            'Quản lý nhà hàng',
-            'Xem và cập nhật thông tin nhà hàng',
-            Icons.restaurant,
-            Colors.blue,
-            () => Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (context) => const OwnerRestaurantManagementPage(),
-              ),
-            ),
-          ),
-          const SizedBox(height: 12),
-
-          _buildManagementCard(
             'Quản lý thực đơn',
             'Thêm, sửa, xóa món ăn',
             Icons.restaurant_menu,
@@ -379,6 +367,19 @@ class _OwnerPageState extends State<OwnerPage> {
             () => Navigator.of(context).push(
               MaterialPageRoute(
                 builder: (context) => const InventoryManagementPage(),
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+
+          _buildManagementCard(
+            'Quản lý nhân viên',
+            'Thêm và quản lý nhân viên nhà hàng',
+            Icons.people,
+            Colors.indigo,
+            () => Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (context) => const StaffManagementPage(),
               ),
             ),
           ),

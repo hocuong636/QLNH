@@ -17,6 +17,7 @@ class _OwnerManagementPageState extends State<OwnerManagementPage> {
   final TextEditingController _phoneController = TextEditingController();
 
   List<Map<String, dynamic>> _owners = [];
+  List<Map<String, dynamic>> _restaurants = [];
   bool _isLoading = true;
   bool _isCreating = false;
 
@@ -24,6 +25,7 @@ class _OwnerManagementPageState extends State<OwnerManagementPage> {
   void initState() {
     super.initState();
     _loadOwners();
+    _loadRestaurants();
   }
 
   @override
@@ -75,6 +77,147 @@ class _OwnerManagementPageState extends State<OwnerManagementPage> {
     }
   }
 
+  Future<void> _loadRestaurants() async {
+    try {
+      final database = FirebaseDatabase.instanceFor(
+        app: FirebaseAuth.instance.app,
+        databaseURL:
+            'https://quanlynhahang-d858b-default-rtdb.asia-southeast1.firebasedatabase.app',
+      );
+
+      final snapshot = await database.ref('restaurants').get();
+
+      if (snapshot.exists) {
+        final data = snapshot.value as Map<dynamic, dynamic>;
+        final restaurants = <Map<String, dynamic>>[];
+
+        data.forEach((key, value) {
+          if (value is Map) {
+            restaurants.add({
+              'id': key,
+              'name': value['name'] ?? '',
+              'ownerId': value['ownerId'] ?? '',
+            });
+          }
+        });
+
+        setState(() {
+          _restaurants = restaurants;
+        });
+      }
+    } catch (e) {
+      print('Error loading restaurants: $e');
+    }
+  }
+
+  Future<void> _assignRestaurant(String ownerId, String ownerName) async {
+    // Lọc các nhà hàng chưa có owner hoặc đã có owner này
+    final availableRestaurants = _restaurants.where((r) {
+      final restaurantOwnerId = r['ownerId'] as String?;
+      return restaurantOwnerId == null || restaurantOwnerId.isEmpty || restaurantOwnerId == ownerId;
+    }).toList();
+
+    if (availableRestaurants.isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Không có nhà hàng nào để gán')),
+        );
+      }
+      return;
+    }
+
+    String? selectedRestaurantId;
+
+    await showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Gán nhà hàng cho $ownerName'),
+        content: StatefulBuilder(
+          builder: (context, setDialogState) => Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('Chọn nhà hàng:'),
+              const SizedBox(height: 16),
+              DropdownButtonFormField<String>(
+                value: selectedRestaurantId,
+                decoration: const InputDecoration(
+                  labelText: 'Nhà hàng',
+                  border: OutlineInputBorder(),
+                ),
+                items: availableRestaurants.map((restaurant) {
+                  return DropdownMenuItem<String>(
+                    value: restaurant['id'],
+                    child: Text(restaurant['name'] ?? 'Không có tên'),
+                  );
+                }).toList(),
+                onChanged: (value) {
+                  setDialogState(() {
+                    selectedRestaurantId = value;
+                  });
+                },
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Hủy'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              if (selectedRestaurantId != null) {
+                await _updateOwnerRestaurant(ownerId, selectedRestaurantId!);
+                if (mounted) {
+                  Navigator.of(context).pop();
+                }
+              }
+            },
+            child: const Text('Gán'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _updateOwnerRestaurant(String ownerId, String restaurantId) async {
+    try {
+      final database = FirebaseDatabase.instanceFor(
+        app: FirebaseAuth.instance.app,
+        databaseURL:
+            'https://quanlynhahang-d858b-default-rtdb.asia-southeast1.firebasedatabase.app',
+      );
+
+      // Cập nhật restaurantID cho owner
+      await database.ref('users/$ownerId').update({
+        'restaurantID': restaurantId,
+        'updatedAt': DateTime.now().toIso8601String(),
+      });
+
+      // Cập nhật ownerId cho restaurant
+      await database.ref('restaurants/$restaurantId').update({
+        'ownerId': ownerId,
+        'updatedAt': DateTime.now().toIso8601String(),
+      });
+
+      await _loadOwners();
+      await _loadRestaurants();
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Đã gán nhà hàng thành công')),
+        );
+      }
+    } catch (e) {
+      print('Error assigning restaurant: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Lỗi gán nhà hàng: $e')),
+        );
+      }
+    }
+  }
+
   Future<void> _createOwner() async {
     if (_emailController.text.isEmpty ||
         _passwordController.text.isEmpty ||
@@ -107,6 +250,7 @@ class _OwnerManagementPageState extends State<OwnerManagementPage> {
         'name': _nameController.text,
         'phone': _phoneController.text,
         'role': UserRole.owner,
+        'restaurantID': null,
         'isActive': true,
         'createdAt': DateTime.now().toIso8601String(),
         'updatedAt': DateTime.now().toIso8601String(),
@@ -294,6 +438,17 @@ class _OwnerManagementPageState extends State<OwnerManagementPage> {
               itemBuilder: (context, index) {
                 final owner = _owners[index];
                 final isActive = owner['isActive'] ?? true;
+                final restaurantID = owner['restaurantID'];
+                
+                // Tìm tên nhà hàng nếu có
+                String restaurantName = 'Chưa gán';
+                if (restaurantID != null) {
+                  final restaurant = _restaurants.firstWhere(
+                    (r) => r['id'] == restaurantID,
+                    orElse: () => {},
+                  );
+                  restaurantName = restaurant['name'] ?? 'Không tìm thấy';
+                }
 
                 return Card(
                   margin: const EdgeInsets.only(bottom: 12),
@@ -320,6 +475,14 @@ class _OwnerManagementPageState extends State<OwnerManagementPage> {
                           style: TextStyle(color: Colors.grey.shade600),
                         ),
                         Text(
+                          'Nhà hàng: $restaurantName',
+                          style: TextStyle(
+                            color: restaurantID != null ? Colors.blue : Colors.orange,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        Text(
                           'Trạng thái: ${isActive ? 'Hoạt động' : 'Đã khóa'}',
                           style: TextStyle(
                             color: isActive ? Colors.green : Colors.red,
@@ -328,16 +491,29 @@ class _OwnerManagementPageState extends State<OwnerManagementPage> {
                         ),
                       ],
                     ),
-                    trailing: IconButton(
-                      icon: Icon(
-                        isActive ? Icons.block : Icons.check_circle,
-                        color: isActive ? Colors.red : Colors.green,
-                      ),
-                      onPressed: () =>
-                          _toggleOwnerStatus(owner['id'], isActive),
-                      tooltip: isActive
-                          ? 'Khóa tài khoản'
-                          : 'Mở khóa tài khoản',
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.restaurant, color: Colors.blue),
+                          onPressed: () => _assignRestaurant(
+                            owner['id'],
+                            owner['name'] ?? owner['email'] ?? 'Owner',
+                          ),
+                          tooltip: 'Gán nhà hàng',
+                        ),
+                        IconButton(
+                          icon: Icon(
+                            isActive ? Icons.block : Icons.check_circle,
+                            color: isActive ? Colors.red : Colors.green,
+                          ),
+                          onPressed: () =>
+                              _toggleOwnerStatus(owner['id'], isActive),
+                          tooltip: isActive
+                              ? 'Khóa tài khoản'
+                              : 'Mở khóa tài khoản',
+                        ),
+                      ],
                     ),
                   ),
                 );

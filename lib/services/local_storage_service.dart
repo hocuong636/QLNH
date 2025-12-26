@@ -27,6 +27,7 @@ class LocalStorageService {
     required String fullName,
     required String role,
     required String phoneNumber,
+    String? restaurantID,
   }) async {
     await Future.wait([
       _prefs.setString(_userIdKey, userId),
@@ -36,6 +37,13 @@ class LocalStorageService {
       _prefs.setString(_userPhoneKey, phoneNumber),
       _prefs.setBool(_isLoggedInKey, true),
     ]);
+    
+    // Lưu restaurantID nếu có
+    if (restaurantID != null) {
+      await _prefs.setString(_restaurantIdKey, restaurantID);
+    } else {
+      await _prefs.remove(_restaurantIdKey);
+    }
   }
 
   // Get user ID
@@ -63,6 +71,11 @@ class LocalStorageService {
     return _prefs.getString(_userPhoneKey);
   }
 
+  // Get restaurant ID
+  String? getRestaurantId() {
+    return _prefs.getString(_restaurantIdKey);
+  }
+
   // Check if user is logged in
   bool isLoggedIn() {
     return _prefs.getBool(_isLoggedInKey) ?? false;
@@ -76,6 +89,7 @@ class LocalStorageService {
       _prefs.remove(_userNameKey),
       _prefs.remove(_userRoleKey),
       _prefs.remove(_userPhoneKey),
+      _prefs.remove(_restaurantIdKey),
       _prefs.remove(_isLoggedInKey),
     ]);
   }
@@ -113,11 +127,6 @@ class LocalStorageService {
   // Clear all data
   Future<void> clearAll() async {
     await _prefs.clear();
-  }
-
-  // Get restaurant ID (for single restaurant app)
-  String getRestaurantId() {
-    return _prefs.getString(_restaurantIdKey) ?? _defaultRestaurantId;
   }
 
   // Set restaurant ID (optional, if needed to change)

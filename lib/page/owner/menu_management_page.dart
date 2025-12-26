@@ -259,8 +259,14 @@ class _MenuManagementPageState extends State<MenuManagementPage> {
                       setDialogState(() => isUploading = true);
 
                       try {
-                        // Get restaurant ID from local storage (single restaurant app)
-                        String restaurantId = _localStorageService.getRestaurantId();
+                        // Get restaurant ID from local storage
+                        String? restaurantId = _localStorageService.getRestaurantId();
+                        
+                        if (restaurantId == null || restaurantId.isEmpty) {
+                          setDialogState(() => isUploading = false);
+                          _showSnackBar('Bạn chưa được gán vào nhà hàng nào. Vui lòng liên hệ Admin.');
+                          return;
+                        }
 
                         // Upload hình ảnh nếu có
                         String finalImageUrl = imageUrl;

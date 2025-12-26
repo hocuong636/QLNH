@@ -9,8 +9,8 @@ class TableService {
         'https://quanlynhahang-d858b-default-rtdb.asia-southeast1.firebasedatabase.app',
   );
 
-  // Get tables by owner ID
-  Future<List<TableModel>> getTables([String? ownerId]) async {
+  // Get tables by restaurant ID
+  Future<List<TableModel>> getTables([String? restaurantID]) async {
     try {
       DatabaseReference ref = _database.ref('tables');
       DataSnapshot snapshot = await ref.get();
@@ -27,9 +27,10 @@ class TableService {
               Map<String, dynamic> tableMap = Map<String, dynamic>.from(value);
               tableMap['id'] = key;
               
-              // Lọc theo ownerId nếu được cung cấp
-              if (ownerId != null && ownerId.isNotEmpty) {
-                if (tableMap['ownerId'] == ownerId) {
+              // Lọc theo restaurantID nếu được cung cấp
+              if (restaurantID != null && restaurantID.isNotEmpty) {
+                // Hỗ trợ cả restaurantID và ownerId (backward compatibility)
+                if (tableMap['restaurantID'] == restaurantID || tableMap['ownerId'] == restaurantID) {
                   tables.add(TableModel.fromJson(tableMap));
                 }
               } else {
