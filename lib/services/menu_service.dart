@@ -9,14 +9,11 @@ class MenuService {
         'https://quanlynhahang-d858b-default-rtdb.asia-southeast1.firebasedatabase.app',
   );
 
-  // Get menu items by restaurant ID
-  Future<List<MenuItem>> getMenuItems(String restaurantId) async {
+  // Get all menu items (for single restaurant app)
+  Future<List<MenuItem>> getMenuItems([String? restaurantId]) async {
     try {
       DatabaseReference ref = _database.ref('menu');
-      DataSnapshot snapshot = await ref
-          .orderByChild('restaurantId')
-          .equalTo(restaurantId)
-          .get();
+      DataSnapshot snapshot = await ref.get();
 
       List<MenuItem> menuItems = [];
       if (snapshot.exists && snapshot.value != null) {

@@ -10,6 +10,10 @@ class LocalStorageService {
   static const String _userRoleKey = 'user_role';
   static const String _isLoggedInKey = 'is_logged_in';
   static const String _userPhoneKey = 'user_phone';
+  static const String _restaurantIdKey = 'restaurant_id';
+  
+  // Default restaurant ID for single restaurant app
+  static const String _defaultRestaurantId = 'default_restaurant';
 
   // Initialize SharedPreferences
   static Future<void> init() async {
@@ -109,5 +113,15 @@ class LocalStorageService {
   // Clear all data
   Future<void> clearAll() async {
     await _prefs.clear();
+  }
+
+  // Get restaurant ID (for single restaurant app)
+  String getRestaurantId() {
+    return _prefs.getString(_restaurantIdKey) ?? _defaultRestaurantId;
+  }
+
+  // Set restaurant ID (optional, if needed to change)
+  Future<void> setRestaurantId(String restaurantId) async {
+    await _prefs.setString(_restaurantIdKey, restaurantId);
   }
 }

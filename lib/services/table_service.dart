@@ -9,25 +9,39 @@ class TableService {
         'https://quanlynhahang-d858b-default-rtdb.asia-southeast1.firebasedatabase.app',
   );
 
-  // Get tables by restaurant ID
-  Future<List<TableModel>> getTables(String restaurantId) async {
+  // Get tables by owner ID
+  Future<List<TableModel>> getTables([String? ownerId]) async {
     try {
       DatabaseReference ref = _database.ref('tables');
-      DataSnapshot snapshot = await ref
-          .orderByChild('restaurantId')
-          .equalTo(restaurantId)
-          .get();
+      DataSnapshot snapshot = await ref.get();
 
       List<TableModel> tables = [];
       if (snapshot.exists && snapshot.value != null) {
-        Map<dynamic, dynamic> tableData =
-            snapshot.value as Map<dynamic, dynamic>;
-        tableData.forEach((key, value) {
-          Map<String, dynamic> tableMap = Map<String, dynamic>.from(value);
-          tableMap['id'] = key;
-          tables.add(TableModel.fromJson(tableMap));
-        });
+        final value = snapshot.value;
+        
+        // Kiểm tra kiểu dữ liệu
+        if (value is Map) {
+          Map<dynamic, dynamic> tableData = value as Map<dynamic, dynamic>;
+          tableData.forEach((key, value) {
+            if (value is Map) {
+              Map<String, dynamic> tableMap = Map<String, dynamic>.from(value);
+              tableMap['id'] = key;
+              
+              // Lọc theo ownerId nếu được cung cấp
+              if (ownerId != null && ownerId.isNotEmpty) {
+                if (tableMap['ownerId'] == ownerId) {
+                  tables.add(TableModel.fromJson(tableMap));
+                }
+              } else {
+                tables.add(TableModel.fromJson(tableMap));
+              }
+            }
+          });
+        }
       }
+      
+      // Sort by table number
+      tables.sort((a, b) => a.number.compareTo(b.number));
       return tables;
     } catch (e) {
       print('Error getting tables: $e');

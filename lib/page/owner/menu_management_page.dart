@@ -1,11 +1,12 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:quanlynhahang/services/menu_service.dart';
 import 'package:quanlynhahang/services/local_storage_service.dart';
+import 'package:quanlynhahang/services/cloudinary_service.dart';
 import 'package:quanlynhahang/models/menu_item.dart';
+import 'package:quanlynhahang/constants/cloudinary_config.dart';
 
 class MenuManagementPage extends StatefulWidget {
   const MenuManagementPage({super.key});
@@ -17,6 +18,7 @@ class MenuManagementPage extends StatefulWidget {
 class _MenuManagementPageState extends State<MenuManagementPage> {
   final MenuService _menuService = MenuService();
   final LocalStorageService _localStorageService = LocalStorageService();
+  final CloudinaryService _cloudinaryService = CloudinaryService();
   final TextEditingController _searchController = TextEditingController();
   List<MenuItem> _menuItems = [];
   List<MenuItem> _filteredMenuItems = [];
@@ -48,16 +50,8 @@ class _MenuManagementPageState extends State<MenuManagementPage> {
   Future<void> _loadMenuItems() async {
     setState(() => _isLoading = true);
     try {
-      String? ownerId = _localStorageService.getUserId();
-      if (ownerId != null) {
-        String? restaurantId = await _menuService.getRestaurantIdByOwnerId(
-          ownerId,
-        );
-        if (restaurantId != null) {
-          _menuItems = await _menuService.getMenuItems(restaurantId);
-          _filterMenuItems();
-        }
-      }
+      _menuItems = await _menuService.getMenuItems();
+      _filterMenuItems();
     } catch (e) {
       _showSnackBar('Lỗi khi tải danh sách món ăn: $e');
     } finally {
@@ -265,48 +259,57 @@ class _MenuManagementPageState extends State<MenuManagementPage> {
                       setDialogState(() => isUploading = true);
 
                       try {
-                        String? ownerId = _localStorageService.getUserId();
-                        if (ownerId != null) {
-                          String? restaurantId = await _menuService
-                              .getRestaurantIdByOwnerId(ownerId);
-                          if (restaurantId != null) {
-                            // Upload hình ảnh nếu có
-                            String finalImageUrl = imageUrl;
-                            if (selectedImage != null) {
-                              finalImageUrl = await _uploadImage(
-                                selectedImage!,
-                                restaurantId,
-                              );
-                            }
+                        // Get restaurant ID from local storage (single restaurant app)
+                        String restaurantId = _localStorageService.getRestaurantId();
 
-                            MenuItem newItem = MenuItem(
-                              id: item?.id ?? '',
-                              restaurantId: restaurantId,
-                              name: nameController.text,
-                              description: descriptionController.text,
-                              price: double.parse(priceController.text),
-                              category: selectedCategory,
-                              imageUrl: finalImageUrl,
-                              isAvailable: isAvailable,
-                              createdAt: item?.createdAt ?? DateTime.now(),
-                              updatedAt: DateTime.now(),
-                            );
-
-                            if (item == null) {
-                              await _menuService.createMenuItem(newItem);
-                              _showSnackBar('Thêm món ăn thành công');
-                            } else {
-                              await _menuService.updateMenuItem(newItem);
-                              _showSnackBar('Cập nhật món ăn thành công');
-                            }
-
-                            Navigator.of(context).pop();
-                            _loadMenuItems();
-                          }
+                        // Upload hình ảnh nếu có
+                        String finalImageUrl = imageUrl;
+                        if (selectedImage != null) {
+                          finalImageUrl = await _uploadImage(
+                            selectedImage!,
+                            restaurantId,
+                          );
                         }
+
+                        MenuItem newItem = MenuItem(
+                          id: item?.id ?? '',
+                          restaurantId: restaurantId,
+                          name: nameController.text,
+                          description: descriptionController.text,
+                          price: double.parse(priceController.text),
+                          category: selectedCategory,
+                          imageUrl: finalImageUrl,
+                          isAvailable: isAvailable,
+                          createdAt: item?.createdAt ?? DateTime.now(),
+                          updatedAt: DateTime.now(),
+                        );
+
+                        if (item == null) {
+                          await _menuService.createMenuItem(newItem);
+                        } else {
+                          await _menuService.updateMenuItem(newItem);
+                        }
+
+                        // Đóng dialog trước
+                        if (context.mounted) {
+                          Navigator.of(context).pop();
+                        }
+
+                        // Hiển thị thông báo và reload
+                        _showSnackBar(
+                          item == null
+                              ? 'Thêm món ăn thành công'
+                              : 'Cập nhật món ăn thành công',
+                        );
+                        await _loadMenuItems();
                       } catch (e) {
-                        _showSnackBar('Lỗi: $e');
+                        // Đảm bảo tắt loading
                         setDialogState(() => isUploading = false);
+                        
+                        // Hiển thị lỗi
+                        if (context.mounted) {
+                          _showSnackBar('Lỗi: $e');
+                        }
                       }
                     },
               child: Text(item == null ? 'Thêm' : 'Cập nhật'),
@@ -337,13 +340,18 @@ class _MenuManagementPageState extends State<MenuManagementPage> {
 
   Future<String> _uploadImage(File image, String restaurantId) async {
     try {
-      final fileName =
-          'menu_${restaurantId}_${DateTime.now().millisecondsSinceEpoch}.jpg';
-      final storageRef =
-          FirebaseStorage.instance.ref().child('menu_images/$fileName');
-      final uploadTask = await storageRef.putFile(image);
-      final downloadUrl = await uploadTask.ref.getDownloadURL();
-      return downloadUrl;
+      // Kiểm tra file có tồn tại không
+      if (!await image.exists()) {
+        throw Exception('File không tồn tại');
+      }
+
+      // Upload lên Cloudinary
+      final imageUrl = await _cloudinaryService.uploadImage(
+        file: image,
+        folder: CloudinaryConfig.menuImagesFolder,
+      );
+
+      return imageUrl;
     } catch (e) {
       throw Exception('Lỗi khi tải hình ảnh: $e');
     }

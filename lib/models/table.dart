@@ -2,7 +2,7 @@ enum TableStatus { empty, occupied, reserved }
 
 class TableModel {
   final String id;
-  final String restaurantId;
+  final String ownerId;
   final int number;
   final int capacity;
   final TableStatus status;
@@ -11,7 +11,7 @@ class TableModel {
 
   TableModel({
     required this.id,
-    required this.restaurantId,
+    required this.ownerId,
     required this.number,
     required this.capacity,
     required this.status,
@@ -22,7 +22,7 @@ class TableModel {
   factory TableModel.fromJson(Map<String, dynamic> json) {
     return TableModel(
       id: json['id'] ?? '',
-      restaurantId: json['restaurantId'] ?? '',
+      ownerId: json['ownerId'] ?? '',
       number: json['number'] ?? 0,
       capacity: json['capacity'] ?? 0,
       status: _parseTableStatus(json['status']),
@@ -50,8 +50,7 @@ class TableModel {
 
   Map<String, dynamic> toJson() {
     return {
-      'id': id,
-      'restaurantId': restaurantId,
+      'ownerId': ownerId,
       'number': number,
       'capacity': capacity,
       'status': status.toString().split('.').last,
@@ -62,7 +61,7 @@ class TableModel {
 
   TableModel copyWith({
     String? id,
-    String? restaurantId,
+    String? ownerId,
     int? number,
     int? capacity,
     TableStatus? status,
@@ -71,7 +70,7 @@ class TableModel {
   }) {
     return TableModel(
       id: id ?? this.id,
-      restaurantId: restaurantId ?? this.restaurantId,
+      ownerId: ownerId ?? this.ownerId,
       number: number ?? this.number,
       capacity: capacity ?? this.capacity,
       status: status ?? this.status,
