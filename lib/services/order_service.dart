@@ -26,10 +26,7 @@ class OrderService {
         print('OrderService: Total orders in DB: ${orderData.length}');
         orderData.forEach((key, value) {
           if (value is Map) {
-            Map<String, dynamic> orderMap = {};
-            (value as Map<dynamic, dynamic>).forEach((k, v) {
-              orderMap[k.toString()] = v;
-            });
+            Map<String, dynamic> orderMap = Map<String, dynamic>.from(value);
             orderMap['id'] = key;
             Order order = Order.fromJson(orderMap);
             print(
@@ -38,9 +35,6 @@ class OrderService {
             // Filter by restaurantId
             if (restaurantId.isEmpty || order.restaurantId == restaurantId) {
               orders.add(order);
-              print('OrderService: Added order ${order.id} with restaurantId ${order.restaurantId}');
-            } else {
-              print('OrderService: Skipped order ${order.id} with restaurantId ${order.restaurantId} != $restaurantId');
             }
           }
         });

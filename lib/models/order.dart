@@ -56,16 +56,7 @@ class Order {
       customerPhone: json['customerPhone'] ?? '',
       items:
           (json['items'] as List<dynamic>?)
-              ?.map((item) {
-                if (item is Map) {
-                  Map<String, dynamic> itemMap = {};
-                  (item as Map<dynamic, dynamic>).forEach((k, v) {
-                    itemMap[k.toString()] = v;
-                  });
-                  return OrderItem.fromJson(itemMap);
-                }
-                return OrderItem(name: '', quantity: 0, price: 0);
-              })
+              ?.map((item) => OrderItem.fromJson(item))
               .toList() ??
           [],
       totalAmount: (json['totalAmount'] ?? 0).toDouble(),
@@ -83,7 +74,6 @@ class Order {
   static OrderStatus _parseOrderStatus(String? status) {
     switch (status) {
       case 'new':
-      case 'new_':
         return OrderStatus.new_;
       case 'cooking':
         return OrderStatus.cooking;
@@ -105,24 +95,11 @@ class Order {
       'customerPhone': customerPhone,
       'items': items.map((item) => item.toJson()).toList(),
       'totalAmount': totalAmount,
-      'status': _statusToString(status),
+      'status': status.toString().split('.').last,
       'notes': notes,
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
     };
-  }
-
-  static String _statusToString(OrderStatus status) {
-    switch (status) {
-      case OrderStatus.new_:
-        return 'new';
-      case OrderStatus.cooking:
-        return 'cooking';
-      case OrderStatus.done:
-        return 'done';
-      case OrderStatus.paid:
-        return 'paid';
-    }
   }
 
   Order copyWith({

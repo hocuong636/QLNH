@@ -42,8 +42,10 @@ class _OrderStatusPageState extends State<OrderStatusPage> {
         _orders = await _orderService.getOrders(restaurantId);
         print('Loaded ${_orders.length} orders from database');
         // Chỉ hiển thị đơn đang phục vụ (chưa thanh toán)
-        // _orders = _orders.where((order) => order.status != OrderStatus.paid).toList();
-        print('Filtered to ${_orders.length} orders for display (including paid for debug)');
+        _orders = _orders
+            .where((order) => order.status != OrderStatus.paid)
+            .toList();
+        print('Filtered to ${_orders.length} orders for display');
         _orders.sort((a, b) => b.createdAt.compareTo(a.createdAt));
       } else {
         print(
@@ -54,10 +56,6 @@ class _OrderStatusPageState extends State<OrderStatusPage> {
           '',
         ); // This will load all and filter in service
         print('Loaded all ${_orders.length} orders for debugging');
-        // Temporarily show all orders including paid for debugging
-        // _orders = _orders.where((order) => order.status != OrderStatus.paid).toList();
-        print('Showing all ${_orders.length} orders including paid for debugging');
-        _orders.sort((a, b) => b.createdAt.compareTo(a.createdAt));
       }
     } catch (e) {
       print('Error loading orders: $e');
@@ -385,13 +383,11 @@ class _OrderStatusPageState extends State<OrderStatusPage> {
   }
 
   Widget _buildOrderList() {
-    print('Building order list with ${_orders.length} orders');
     return ListView.builder(
       padding: const EdgeInsets.all(16),
       itemCount: _orders.length,
       itemBuilder: (context, index) {
         final order = _orders[index];
-        print('Displaying order ${order.id} with status ${order.status}');
         return Card(
           margin: const EdgeInsets.only(bottom: 12),
           shape: RoundedRectangleBorder(
