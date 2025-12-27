@@ -385,7 +385,7 @@ class _SystemSettingsPageState extends State<SystemSettingsPage> {
                                     children: [
                                       Text(notification['message'] ?? ''),
                                       Text(
-                                        '${timestamp.toLocal().toString().split('.')[0]}',
+                                        timestamp.toLocal().toString().split('.')[0],
                                         style: TextStyle(
                                           color: Colors.grey.shade600,
                                           fontSize: 12,

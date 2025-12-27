@@ -355,7 +355,7 @@ class _AdminPageState extends State<AdminPage> with TickerProviderStateMixin {
                       builder: (context, snapshot) {
                         if (snapshot.connectionState ==
                             ConnectionState.waiting) {
-                          return Container(
+                          return SizedBox(
                             width: 20,
                             height: 20,
                             child: CircularProgressIndicator(

@@ -191,7 +191,7 @@ class _MenuManagementPageState extends State<MenuManagementPage> {
                 ),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<String>(
-                  value: selectedCategory,
+                  initialValue: selectedCategory,
                   decoration: const InputDecoration(
                     labelText: 'Danh mục',
                     border: OutlineInputBorder(),

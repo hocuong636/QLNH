@@ -3,14 +3,14 @@ import 'package:quanlynhahang/services/order_service.dart';
 import 'package:quanlynhahang/services/local_storage_service.dart';
 import 'package:quanlynhahang/models/order.dart';
 
-class OrderManagementPage extends StatefulWidget {
-  const OrderManagementPage({super.key});
+class OrderHistoryPage extends StatefulWidget {
+  const OrderHistoryPage({super.key});
 
   @override
-  State<OrderManagementPage> createState() => _OrderManagementPageState();
+  State<OrderHistoryPage> createState() => _OrderHistoryPageState();
 }
 
-class _OrderManagementPageState extends State<OrderManagementPage> {
+class _OrderHistoryPageState extends State<OrderHistoryPage> {
   final OrderService _orderService = OrderService();
   final LocalStorageService _localStorageService = LocalStorageService();
   List<Order> _orders = [];
@@ -25,18 +25,17 @@ class _OrderManagementPageState extends State<OrderManagementPage> {
   Future<void> _loadOrders() async {
     setState(() => _isLoading = true);
     try {
-      String? ownerId = _localStorageService.getUserId();
-      if (ownerId != null) {
-        String? restaurantId = await _orderService.getRestaurantIdByOwnerId(
-          ownerId,
-        );
-        if (restaurantId != null) {
-          _orders = await _orderService.getOrders(restaurantId);
-          _orders.sort((a, b) => b.createdAt.compareTo(a.createdAt));
-        }
+      String? restaurantId = _localStorageService.getRestaurantId();
+      if (restaurantId != null) {
+        _orders = await _orderService.getOrders(restaurantId);
+        // Chỉ hiển thị đơn đã thanh toán
+        _orders = _orders
+            .where((order) => order.status == OrderStatus.paid)
+            .toList();
+        _orders.sort((a, b) => b.createdAt.compareTo(a.createdAt));
       }
     } catch (e) {
-      _showSnackBar('Lỗi khi tải danh sách đơn hàng: $e');
+      _showSnackBar('Lỗi khi tải lịch sử đơn hàng: $e');
     } finally {
       setState(() => _isLoading = false);
     }
@@ -112,16 +111,6 @@ class _OrderManagementPageState extends State<OrderManagementPage> {
             onPressed: () => Navigator.of(context).pop(),
             child: const Text('Đóng'),
           ),
-          if (order.status != OrderStatus.done)
-            ElevatedButton(
-              onPressed: () async {
-                await _updateOrderStatus(order, _getNextStatus(order.status));
-                Navigator.of(context).pop();
-              },
-              child: Text(
-                'Chuyển ${_getStatusDisplayName(_getNextStatus(order.status))}',
-              ),
-            ),
         ],
       ),
     );
@@ -146,78 +135,15 @@ class _OrderManagementPageState extends State<OrderManagementPage> {
     );
   }
 
-  OrderStatus _getNextStatus(OrderStatus currentStatus) {
-    switch (currentStatus) {
-      case OrderStatus.new_:
-        return OrderStatus.cooking;
-      case OrderStatus.cooking:
-        return OrderStatus.done;
-      case OrderStatus.done:
-        return OrderStatus.done;
-      case OrderStatus.paid:
-        return OrderStatus.paid;
-    }
-  }
-
-  String _getStatusDisplayName(OrderStatus status) {
-    switch (status) {
-      case OrderStatus.new_:
-        return 'Mới';
-      case OrderStatus.cooking:
-        return 'Đang nấu';
-      case OrderStatus.done:
-        return 'Hoàn thành';
-      case OrderStatus.paid:
-        return 'Đã thanh toán';
-    }
-  }
-
-  Future<void> _updateOrderStatus(Order order, OrderStatus newStatus) async {
-    try {
-      Order updatedOrder = Order(
-        id: order.id,
-        restaurantId: order.restaurantId,
-        tableId: order.tableId,
-        customerName: order.customerName,
-        customerPhone: order.customerPhone,
-        items: order.items,
-        totalAmount: order.totalAmount,
-        status: newStatus,
-        notes: order.notes,
-        createdAt: order.createdAt,
-        updatedAt: DateTime.now(),
-      );
-
-      await _orderService.updateOrder(updatedOrder);
-      _showSnackBar('Cập nhật trạng thái đơn hàng thành công');
-      _loadOrders();
-    } catch (e) {
-      _showSnackBar('Lỗi khi cập nhật trạng thái: $e');
-    }
-  }
-
   String _formatDateTime(DateTime dateTime) {
     return '${dateTime.day}/${dateTime.month}/${dateTime.year} ${dateTime.hour}:${dateTime.minute.toString().padLeft(2, '0')}';
-  }
-
-  Color _getStatusColor(OrderStatus status) {
-    switch (status) {
-      case OrderStatus.new_:
-        return Colors.blue;
-      case OrderStatus.cooking:
-        return Colors.orange;
-      case OrderStatus.done:
-        return Colors.green;
-      case OrderStatus.paid:
-        return Colors.purple;
-    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Quản lý đơn hàng'),
+        title: const Text('Lịch sử đơn hàng'),
         backgroundColor: Colors.white,
         foregroundColor: Colors.black87,
         elevation: 0,
@@ -235,16 +161,11 @@ class _OrderManagementPageState extends State<OrderManagementPage> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.receipt_long, size: 80, color: Colors.grey.shade400),
+          Icon(Icons.history, size: 80, color: Colors.grey.shade400),
           const SizedBox(height: 16),
           Text(
             'Chưa có đơn hàng nào',
             style: TextStyle(fontSize: 18, color: Colors.grey.shade600),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Đơn hàng sẽ xuất hiện ở đây',
-            style: TextStyle(fontSize: 14, color: Colors.grey.shade500),
           ),
         ],
       ),
@@ -286,13 +207,13 @@ class _OrderManagementPageState extends State<OrderManagementPage> {
                           vertical: 4,
                         ),
                         decoration: BoxDecoration(
-                          color: _getStatusColor(order.status).withOpacity(0.1),
+                          color: Colors.purple.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: Text(
-                          _getStatusDisplayName(order.status),
+                        child: const Text(
+                          'Đã thanh toán',
                           style: TextStyle(
-                            color: _getStatusColor(order.status),
+                            color: Colors.purple,
                             fontSize: 12,
                             fontWeight: FontWeight.w500,
                           ),

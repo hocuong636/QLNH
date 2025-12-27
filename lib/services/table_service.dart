@@ -21,7 +21,7 @@ class TableService {
         
         // Kiểm tra kiểu dữ liệu
         if (value is Map) {
-          Map<dynamic, dynamic> tableData = value as Map<dynamic, dynamic>;
+          Map<dynamic, dynamic> tableData = value;
           tableData.forEach((key, value) {
             if (value is Map) {
               Map<String, dynamic> tableMap = Map<String, dynamic>.from(value);

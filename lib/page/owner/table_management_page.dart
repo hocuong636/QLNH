@@ -120,7 +120,7 @@ class _TableManagementPageState extends State<TableManagementPage> {
                 ),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<String>(
-                  value: selectedStatus,
+                  initialValue: selectedStatus,
                   decoration: const InputDecoration(
                     labelText: 'Trạng thái',
                     border: OutlineInputBorder(),
@@ -373,8 +373,7 @@ class _TableManagementPageState extends State<TableManagementPage> {
                         }
 
                         _showSnackBar(
-                          'Thêm thành công $successCount bàn' +
-                              (failCount > 0 ? ', thất bại $failCount' : ''),
+                          'Thêm thành công $successCount bàn${failCount > 0 ? ', thất bại $failCount' : ''}',
                         );
                         await _loadTables();
                       } catch (e) {

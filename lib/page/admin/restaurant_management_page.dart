@@ -256,7 +256,7 @@ class _RestaurantManagementPageState extends State<RestaurantManagementPage> {
             mainAxisSize: MainAxisSize.min,
             children: [
               DropdownButtonFormField<String>(
-                value: _selectedOwnerId,
+                initialValue: _selectedOwnerId,
                 decoration: const InputDecoration(
                   labelText: 'Chủ sở hữu *',
                   hintText: 'Chọn chủ sở hữu',

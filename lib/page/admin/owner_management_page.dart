@@ -139,7 +139,7 @@ class _OwnerManagementPageState extends State<OwnerManagementPage> {
               const Text('Chọn nhà hàng:'),
               const SizedBox(height: 16),
               DropdownButtonFormField<String>(
-                value: selectedRestaurantId,
+                initialValue: selectedRestaurantId,
                 decoration: const InputDecoration(
                   labelText: 'Nhà hàng',
                   border: OutlineInputBorder(),

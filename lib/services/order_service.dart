@@ -12,22 +12,43 @@ class OrderService {
   // Get orders by restaurant ID
   Future<List<Order>> getOrders(String restaurantId) async {
     try {
+      print('OrderService: Getting orders for restaurantId: $restaurantId');
       DatabaseReference ref = _database.ref('orders');
-      DataSnapshot snapshot = await ref
-          .orderByChild('restaurantId')
-          .equalTo(restaurantId)
-          .get();
 
+      // Temporarily get all orders and filter in code to debug
+      DataSnapshot snapshot = await ref.get();
+
+      print('OrderService: Full snapshot exists: ${snapshot.exists}');
       List<Order> orders = [];
       if (snapshot.exists && snapshot.value != null) {
         Map<dynamic, dynamic> orderData =
             snapshot.value as Map<dynamic, dynamic>;
+        print('OrderService: Total orders in DB: ${orderData.length}');
         orderData.forEach((key, value) {
-          Map<String, dynamic> orderMap = Map<String, dynamic>.from(value);
-          orderMap['id'] = key;
-          orders.add(Order.fromJson(orderMap));
+          if (value is Map) {
+            Map<String, dynamic> orderMap = {};
+            (value as Map<dynamic, dynamic>).forEach((k, v) {
+              orderMap[k.toString()] = v;
+            });
+            orderMap['id'] = key;
+            Order order = Order.fromJson(orderMap);
+            print(
+              'OrderService: Order ${order.id} has restaurantId: ${order.restaurantId}, status: ${order.status}',
+            );
+            // Filter by restaurantId
+            if (restaurantId.isEmpty || order.restaurantId == restaurantId) {
+              orders.add(order);
+              print('OrderService: Added order ${order.id} with restaurantId ${order.restaurantId}');
+            } else {
+              print('OrderService: Skipped order ${order.id} with restaurantId ${order.restaurantId} != $restaurantId');
+            }
+          }
         });
       }
+
+      print(
+        'OrderService: Filtered to ${orders.length} orders for restaurantId: $restaurantId',
+      );
       // Sort by createdAt descending (newest first)
       orders.sort((a, b) => b.createdAt.compareTo(a.createdAt));
       return orders;

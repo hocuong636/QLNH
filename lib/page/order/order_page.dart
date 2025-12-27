@@ -16,6 +16,17 @@ class _OrderPageState extends State<OrderPage> {
   final LocalStorageService _localStorageService = LocalStorageService();
   int _selectedIndex = 0;
 
+  @override
+  void initState() {
+    super.initState();
+    String? restaurantId = _localStorageService.getRestaurantId();
+    String? userId = _localStorageService.getUserId();
+    String? userRole = _localStorageService.getUserRole();
+    print(
+      'Order Page - UserId: $userId, Role: $userRole, RestaurantId: $restaurantId',
+    );
+  }
+
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
@@ -37,7 +48,9 @@ class _OrderPageState extends State<OrderPage> {
             TextButton(
               onPressed: () {
                 _authService.signOut();
-                Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false);
+                Navigator.of(
+                  context,
+                ).pushNamedAndRemoveUntil('/login', (route) => false);
               },
               child: const Text('Đăng Xuất'),
             ),
@@ -50,20 +63,14 @@ class _OrderPageState extends State<OrderPage> {
   @override
   Widget build(BuildContext context) {
     String? userName = _localStorageService.getUserName();
-    
-    List<Widget> pages = [
-      _buildDashboardPage(userName),
-      const ProfilePage(),
-    ];
+
+    List<Widget> pages = [_buildDashboardPage(userName), const ProfilePage()];
 
     return Scaffold(
       appBar: AppBar(
         title: Text(
           'Xin chào, ${userName ?? 'Nhân Viên'}',
-          style: const TextStyle(
-            fontWeight: FontWeight.w600,
-            fontSize: 18,
-          ),
+          style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 18),
         ),
         centerTitle: false,
         elevation: 0,
@@ -77,10 +84,7 @@ class _OrderPageState extends State<OrderPage> {
           ),
         ],
       ),
-      body: Container(
-        color: Colors.grey.shade50,
-        child: pages[_selectedIndex],
-      ),
+      body: Container(color: Colors.grey.shade50, child: pages[_selectedIndex]),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,
@@ -121,48 +125,88 @@ class _OrderPageState extends State<OrderPage> {
           const SizedBox(height: 8),
           Text(
             'Quản lý đặt hàng',
-            style: TextStyle(
-              fontSize: 16,
-              color: Colors.grey.shade600,
-            ),
+            style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
           ),
           const SizedBox(height: 30),
-          Card(
-            elevation: 2,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Container(
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(12),
-                color: Colors.white,
+          GridView.count(
+            crossAxisCount: 2,
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            crossAxisSpacing: 16,
+            mainAxisSpacing: 16,
+            children: [
+              _buildFunctionCard(
+                'Quản lý bàn',
+                Icons.table_restaurant,
+                Colors.blue,
+                () => Navigator.pushNamed(context, '/order/table_management'),
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Chức năng sắp có',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    'Các chức năng đặt hàng sẽ được cập nhật sớm.',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey.shade600,
-                    ),
-                  ),
-                ],
+              _buildFunctionCard(
+                'Tạo đơn hàng',
+                Icons.add_shopping_cart,
+                Colors.green,
+                () => Navigator.pushNamed(context, '/order/create_order'),
               ),
-            ),
+              _buildFunctionCard(
+                'Xem đơn hàng',
+                Icons.receipt_long,
+                Colors.orange,
+                () => Navigator.pushNamed(context, '/order/order_status'),
+              ),
+              _buildFunctionCard(
+                'Thanh toán',
+                Icons.payment,
+                Colors.purple,
+                () => Navigator.pushNamed(context, '/order/payment'),
+              ),
+              _buildFunctionCard(
+                'Lịch sử',
+                Icons.history,
+                Colors.teal,
+                () => Navigator.pushNamed(context, '/order/order_history'),
+              ),
+            ],
           ),
         ],
       ),
     );
   }
-}
 
+  Widget _buildFunctionCard(
+    String title,
+    IconData icon,
+    Color color,
+    VoidCallback onTap,
+  ) {
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            color: Colors.white,
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, size: 48, color: color),
+              const SizedBox(height: 12),
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}

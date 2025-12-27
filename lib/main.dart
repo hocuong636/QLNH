@@ -9,24 +9,27 @@ import 'page/admin/admin_page.dart';
 import 'page/owner/owner_page.dart';
 import 'page/kitchen/kitchen_page.dart';
 import 'page/order/order_page.dart';
+import 'page/order/order_table_management_page.dart';
+import 'page/order/order_create_page.dart';
+import 'page/order/order_status_page.dart';
+import 'page/order/order_payment_page.dart';
+import 'page/order/order_history_page.dart';
 import 'services/local_storage_service.dart';
 
-Future<void>main() async {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   // Khởi tạo LocalStorageService
   await LocalStorageService.init();
-  
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
-  
+
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
   // Bật logging để debug
   FirebaseDatabase.instance.setLoggingEnabled(true);
-  
+
   print('✓ Firebase App initialized successfully');
   print('Database URL: ${DefaultFirebaseOptions.currentPlatform.databaseURL}');
-  
+
   runApp(const MyApp());
 }
 
@@ -50,6 +53,12 @@ class MyApp extends StatelessWidget {
         '/owner': (context) => const OwnerPage(),
         '/kitchen': (context) => const KitchenPage(),
         '/order': (context) => const OrderPage(),
+        '/order/table_management': (context) =>
+            const OrderTableManagementPage(),
+        '/order/create_order': (context) => const OrderCreatePage(),
+        '/order/order_status': (context) => const OrderStatusPage(),
+        '/order/payment': (context) => const OrderPaymentPage(),
+        '/order/order_history': (context) => const OrderHistoryPage(),
       },
     );
   }
