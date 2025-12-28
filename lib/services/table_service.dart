@@ -18,19 +18,26 @@ class TableService {
       List<TableModel> tables = [];
       if (snapshot.exists && snapshot.value != null) {
         final value = snapshot.value;
-        
+
         // Kiểm tra kiểu dữ liệu
         if (value is Map) {
           Map<dynamic, dynamic> tableData = value;
           tableData.forEach((key, value) {
             if (value is Map) {
-              Map<String, dynamic> tableMap = Map<String, dynamic>.from(value);
-              tableMap['id'] = key;
-              
+              // Cast to Map<dynamic, dynamic> first
+              Map<dynamic, dynamic> rawMap = value as Map<dynamic, dynamic>;
+              // Convert to Map<String, dynamic>
+              Map<String, dynamic> tableMap = {};
+              rawMap.forEach((k, v) {
+                tableMap[k.toString()] = v;
+              });
+              tableMap['id'] = key.toString();
+
               // Lọc theo restaurantID nếu được cung cấp
               if (restaurantID != null && restaurantID.isNotEmpty) {
                 // Hỗ trợ cả restaurantID và ownerId (backward compatibility)
-                if (tableMap['restaurantID'] == restaurantID || tableMap['ownerId'] == restaurantID) {
+                if (tableMap['restaurantID'] == restaurantID ||
+                    tableMap['ownerId'] == restaurantID) {
                   tables.add(TableModel.fromJson(tableMap));
                 }
               } else {
@@ -40,7 +47,7 @@ class TableService {
           });
         }
       }
-      
+
       // Sort by table number
       tables.sort((a, b) => a.number.compareTo(b.number));
       return tables;

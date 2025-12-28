@@ -29,6 +29,15 @@ class _OrderTableManagementPageState extends State<OrderTableManagementPage> {
       String? restaurantId = _localStorageService.getRestaurantId();
       if (restaurantId != null) {
         _tables = await _tableService.getTables(restaurantId);
+      } else {
+        // Try to get restaurantId from userId for staff
+        String? userId = _localStorageService.getUserId();
+        if (userId != null) {
+          restaurantId = await _tableService.getRestaurantIdByOwnerId(userId);
+          if (restaurantId != null) {
+            _tables = await _tableService.getTables(restaurantId);
+          }
+        }
       }
     } catch (e) {
       _showSnackBar('Lỗi khi tải danh sách bàn: $e');

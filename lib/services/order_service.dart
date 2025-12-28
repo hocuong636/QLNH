@@ -26,15 +26,22 @@ class OrderService {
         print('OrderService: Total orders in DB: ${orderData.length}');
         orderData.forEach((key, value) {
           if (value is Map) {
-            Map<String, dynamic> orderMap = Map<String, dynamic>.from(value);
-            orderMap['id'] = key;
-            Order order = Order.fromJson(orderMap);
-            print(
-              'OrderService: Order ${order.id} has restaurantId: ${order.restaurantId}, status: ${order.status}',
-            );
-            // Filter by restaurantId
-            if (restaurantId.isEmpty || order.restaurantId == restaurantId) {
-              orders.add(order);
+            // Cast to Map<dynamic, dynamic> first
+            Map<dynamic, dynamic> rawMap = value as Map<dynamic, dynamic>;
+            // Convert to Map<String, dynamic>
+            Map<String, dynamic> orderMap = {};
+            rawMap.forEach((k, v) {
+              orderMap[k.toString()] = v;
+            });
+            orderMap['id'] = key.toString();
+            try {
+              Order order = Order.fromJson(orderMap);
+              // Filter by restaurantId
+              if (restaurantId.isEmpty || order.restaurantId == restaurantId) {
+                orders.add(order);
+              }
+            } catch (e) {
+              print('OrderService: Error parsing order $key: $e');
             }
           }
         });
@@ -106,6 +113,42 @@ class OrderService {
       return null;
     } catch (e) {
       print('Error getting restaurant ID by owner ID: $e');
+      return null;
+    }
+  }
+
+  // Get restaurant ID by user ID (for both owner and staff)
+  Future<String?> getRestaurantIdByUserId(String userId) async {
+    try {
+      DatabaseReference ref = _database.ref('users/$userId');
+      DataSnapshot snapshot = await ref.get();
+
+      if (snapshot.exists && snapshot.value != null) {
+        Map<dynamic, dynamic> userData =
+            snapshot.value as Map<dynamic, dynamic>;
+        String? restaurantId = userData['restaurantID'];
+
+        // If restaurantId is set in user data, return it
+        if (restaurantId != null && restaurantId.isNotEmpty) {
+          return restaurantId;
+        }
+
+        // If not set, try to find restaurant where this user is the owner
+        DatabaseReference restaurantRef = _database.ref('restaurants');
+        DataSnapshot restaurantSnapshot = await restaurantRef
+            .orderByChild('ownerId')
+            .equalTo(userId)
+            .get();
+
+        if (restaurantSnapshot.exists && restaurantSnapshot.value != null) {
+          Map<dynamic, dynamic> restaurants =
+              restaurantSnapshot.value as Map<dynamic, dynamic>;
+          return restaurants.keys.first;
+        }
+      }
+      return null;
+    } catch (e) {
+      print('Error getting restaurant ID by user ID: $e');
       return null;
     }
   }

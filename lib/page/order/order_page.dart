@@ -142,6 +142,12 @@ class _OrderPageState extends State<OrderPage> {
                 () => Navigator.pushNamed(context, '/order/table_management'),
               ),
               _buildFunctionCard(
+                'Xem thực đơn',
+                Icons.restaurant_menu,
+                Colors.teal,
+                () => Navigator.pushNamed(context, '/order/menu'),
+              ),
+              _buildFunctionCard(
                 'Tạo đơn hàng',
                 Icons.add_shopping_cart,
                 Colors.green,

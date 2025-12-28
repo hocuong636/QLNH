@@ -34,7 +34,7 @@ class _OrderPaymentPageState extends State<OrderPaymentPage> {
       if (restaurantId == null || restaurantId.isEmpty) {
         String? userId = _localStorageService.getUserId();
         if (userId != null) {
-          restaurantId = await _orderService.getRestaurantIdByOwnerId(userId);
+          restaurantId = await _orderService.getRestaurantIdByUserId(userId);
         }
       }
 
@@ -172,7 +172,7 @@ class _OrderPaymentPageState extends State<OrderPaymentPage> {
       if (restaurantId == null || restaurantId.isEmpty) {
         String? userId = _localStorageService.getUserId();
         if (userId != null) {
-          restaurantId = await _orderService.getRestaurantIdByOwnerId(userId);
+          restaurantId = await _orderService.getRestaurantIdByUserId(userId);
         }
       }
 
@@ -192,7 +192,7 @@ class _OrderPaymentPageState extends State<OrderPaymentPage> {
           updatedAt: DateTime.now(),
         );
         await _tableService.updateTable(updatedTable);
-            }
+      }
 
       Navigator.of(context).pop();
       _showSnackBar('Thanh toán thành công');

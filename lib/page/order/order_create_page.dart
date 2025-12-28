@@ -25,6 +25,7 @@ class _OrderCreatePageState extends State<OrderCreatePage> {
   final List<OrderItem> _cartItems = [];
   TableModel? _selectedTable;
   bool _isLoading = true;
+  Order? _existingOrder; // For editing existing order
 
   final TextEditingController _customerNameController = TextEditingController();
   final TextEditingController _customerPhoneController =
@@ -35,6 +36,32 @@ class _OrderCreatePageState extends State<OrderCreatePage> {
   void initState() {
     super.initState();
     _loadData();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _loadExistingOrder();
+  }
+
+  Future<void> _loadExistingOrder() async {
+    final arguments = ModalRoute.of(context)?.settings.arguments;
+    if (arguments is Order && _existingOrder == null) {
+      _existingOrder = arguments;
+      _cartItems.addAll(_existingOrder!.items);
+      _customerNameController.text = _existingOrder!.customerName;
+      _customerPhoneController.text = _existingOrder!.customerPhone;
+      _notesController.text = _existingOrder!.notes;
+
+      // Set selected table
+      if (_tables.isNotEmpty) {
+        _selectedTable = _tables.firstWhere(
+          (table) => table.number.toString() == _existingOrder!.tableId,
+          orElse: () => _tables.first,
+        );
+        setState(() {});
+      }
+    }
   }
 
   @override
@@ -54,7 +81,7 @@ class _OrderCreatePageState extends State<OrderCreatePage> {
       if (restaurantId == null || restaurantId.isEmpty) {
         String? userId = _localStorageService.getUserId();
         if (userId != null) {
-          restaurantId = await _orderService.getRestaurantIdByOwnerId(userId);
+          restaurantId = await _orderService.getRestaurantIdByUserId(userId);
         }
       }
 
@@ -197,7 +224,7 @@ class _OrderCreatePageState extends State<OrderCreatePage> {
       if (restaurantId == null || restaurantId.isEmpty) {
         String? userId = _localStorageService.getUserId();
         if (userId != null) {
-          restaurantId = await _orderService.getRestaurantIdByOwnerId(userId);
+          restaurantId = await _orderService.getRestaurantIdByUserId(userId);
         }
       }
 
@@ -206,30 +233,52 @@ class _OrderCreatePageState extends State<OrderCreatePage> {
         return;
       }
 
-      Order newOrder = Order(
-        id: '',
-        restaurantId: restaurantId,
-        tableId: _selectedTable!.number.toString(),
-        customerName: _customerNameController.text,
-        customerPhone: _customerPhoneController.text,
-        items: _cartItems,
-        totalAmount: _calculateTotal(),
-        status: OrderStatus.new_,
-        notes: _notesController.text,
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
-      );
+      if (_existingOrder != null) {
+        // Update existing order
+        Order updatedOrder = _existingOrder!.copyWith(
+          tableId: _selectedTable!.number.toString(),
+          customerName: _customerNameController.text,
+          customerPhone: _customerPhoneController.text,
+          items: _cartItems,
+          totalAmount: _calculateTotal(),
+          notes: _notesController.text,
+          updatedAt: DateTime.now(),
+        );
 
-      print(
-        'Creating order with restaurantId: $restaurantId, tableId: ${newOrder.tableId}',
-      );
-      String? orderId = await _orderService.createOrder(newOrder);
-      print('Order created with ID: $orderId');
-      if (orderId != null) {
-        _showSnackBar('Tạo đơn hàng thành công');
-        Navigator.pop(context);
+        bool success = await _orderService.updateOrder(updatedOrder);
+        if (success) {
+          _showSnackBar('Cập nhật đơn hàng thành công');
+          Navigator.pop(context);
+        } else {
+          _showSnackBar('Lỗi khi cập nhật đơn hàng');
+        }
       } else {
-        _showSnackBar('Lỗi khi tạo đơn hàng');
+        // Create new order
+        Order newOrder = Order(
+          id: '',
+          restaurantId: restaurantId,
+          tableId: _selectedTable!.number.toString(),
+          customerName: _customerNameController.text,
+          customerPhone: _customerPhoneController.text,
+          items: _cartItems,
+          totalAmount: _calculateTotal(),
+          status: OrderStatus.new_,
+          notes: _notesController.text,
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        );
+
+        print(
+          'Creating order with restaurantId: $restaurantId, tableId: ${newOrder.tableId}',
+        );
+        String? orderId = await _orderService.createOrder(newOrder);
+        print('Order created with ID: $orderId');
+        if (orderId != null) {
+          _showSnackBar('Tạo đơn hàng thành công');
+          Navigator.pop(context);
+        } else {
+          _showSnackBar('Lỗi khi tạo đơn hàng');
+        }
       }
     } catch (e) {
       _showSnackBar('Lỗi: $e');
@@ -240,7 +289,9 @@ class _OrderCreatePageState extends State<OrderCreatePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Tạo đơn hàng'),
+        title: Text(
+          _existingOrder != null ? 'Cập nhật đơn hàng' : 'Tạo đơn hàng',
+        ),
         backgroundColor: Colors.white,
         foregroundColor: Colors.black87,
         elevation: 0,
@@ -374,7 +425,9 @@ class _OrderCreatePageState extends State<OrderCreatePage> {
               padding: const EdgeInsets.all(16),
               child: ElevatedButton(
                 onPressed: _createOrder,
-                child: const Text('Tạo đơn hàng'),
+                child: Text(
+                  _existingOrder != null ? 'Cập nhật đơn hàng' : 'Tạo đơn hàng',
+                ),
               ),
             )
           : null,

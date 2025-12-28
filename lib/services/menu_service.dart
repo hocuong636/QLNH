@@ -19,9 +19,17 @@ class MenuService {
       if (snapshot.exists && snapshot.value != null) {
         Map<dynamic, dynamic> items = snapshot.value as Map<dynamic, dynamic>;
         items.forEach((key, value) {
-          Map<String, dynamic> itemData = Map<String, dynamic>.from(value);
-          itemData['id'] = key;
-          menuItems.add(MenuItem.fromJson(itemData));
+          if (value is Map) {
+            // Cast to Map<dynamic, dynamic> first
+            Map<dynamic, dynamic> rawMap = value as Map<dynamic, dynamic>;
+            // Convert to Map<String, dynamic>
+            Map<String, dynamic> itemData = {};
+            rawMap.forEach((k, v) {
+              itemData[k.toString()] = v;
+            });
+            itemData['id'] = key.toString();
+            menuItems.add(MenuItem.fromJson(itemData));
+          }
         });
       }
       return menuItems;

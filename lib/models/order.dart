@@ -55,9 +55,17 @@ class Order {
       customerName: json['customerName'] ?? '',
       customerPhone: json['customerPhone'] ?? '',
       items:
-          (json['items'] as List<dynamic>?)
-              ?.map((item) => OrderItem.fromJson(item))
-              .toList() ??
+          (json['items'] as List<dynamic>?)?.map((item) {
+            if (item is Map) {
+              Map<dynamic, dynamic> rawItem = item as Map<dynamic, dynamic>;
+              Map<String, dynamic> itemMap = {};
+              rawItem.forEach((k, v) {
+                itemMap[k.toString()] = v;
+              });
+              return OrderItem.fromJson(itemMap);
+            }
+            return OrderItem(name: '', quantity: 0, price: 0);
+          }).toList() ??
           [],
       totalAmount: (json['totalAmount'] ?? 0).toDouble(),
       status: _parseOrderStatus(json['status']),

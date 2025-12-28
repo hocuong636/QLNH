@@ -12,6 +12,7 @@ import 'page/order/order_page.dart';
 import 'page/order/order_table_management_page.dart';
 import 'page/order/order_create_page.dart';
 import 'page/order/order_status_page.dart';
+import 'page/order/order_menu_page.dart';
 import 'page/order/order_payment_page.dart';
 import 'page/order/order_history_page.dart';
 import 'services/local_storage_service.dart';
@@ -57,6 +58,7 @@ class MyApp extends StatelessWidget {
             const OrderTableManagementPage(),
         '/order/create_order': (context) => const OrderCreatePage(),
         '/order/order_status': (context) => const OrderStatusPage(),
+        '/order/menu': (context) => const OrderMenuPage(),
         '/order/payment': (context) => const OrderPaymentPage(),
         '/order/order_history': (context) => const OrderHistoryPage(),
       },
