@@ -34,7 +34,9 @@ class _StaffManagementPageState extends State<StaffManagementPage> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('Bạn chưa được gán vào nhà hàng nào. Vui lòng liên hệ Admin.'),
+              content: Text(
+                'Bạn chưa được gán vào nhà hàng nào. Vui lòng liên hệ Admin.',
+              ),
             ),
           );
         }
@@ -42,18 +44,16 @@ class _StaffManagementPageState extends State<StaffManagementPage> {
         return;
       }
 
-      final database = FirebaseDatabase.instanceFor(
-        app: FirebaseAuth.instance.app,
-        databaseURL:
-            'https://quanlynhahang-d858b-default-rtdb.asia-southeast1.firebasedatabase.app',
-      );
+      final database = FirebaseDatabase.instance;
 
       final snapshot = await database.ref('users').get();
 
       if (snapshot.exists && snapshot.value != null) {
         // Kiểm tra kiểu dữ liệu trước khi xử lý
         if (snapshot.value is! Map) {
-          throw Exception('Dữ liệu không đúng định dạng. Có thể do quyền truy cập bị giới hạn.');
+          throw Exception(
+            'Dữ liệu không đúng định dạng. Có thể do quyền truy cập bị giới hạn.',
+          );
         }
 
         final data = snapshot.value as Map<dynamic, dynamic>;
@@ -93,21 +93,19 @@ class _StaffManagementPageState extends State<StaffManagementPage> {
       setState(() => _isLoading = false);
       if (mounted) {
         String errorMessage = 'Lỗi tải dữ liệu: $e';
-        
+
         // Xử lý thông báo lỗi cụ thể
-        if (e.toString().contains('permission') || 
+        if (e.toString().contains('permission') ||
             e.toString().contains('Permission denied')) {
-          errorMessage = 'Không có quyền truy cập dữ liệu người dùng. Vui lòng kiểm tra Firebase Rules.';
+          errorMessage =
+              'Không có quyền truy cập dữ liệu người dùng. Vui lòng kiểm tra Firebase Rules.';
         }
-        
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(errorMessage),
             duration: const Duration(seconds: 5),
-            action: SnackBarAction(
-              label: 'Đóng',
-              onPressed: () {},
-            ),
+            action: SnackBarAction(label: 'Đóng', onPressed: () {}),
           ),
         );
       }
@@ -116,11 +114,7 @@ class _StaffManagementPageState extends State<StaffManagementPage> {
 
   Future<void> _addStaffToRestaurant(String userId, String role) async {
     try {
-      final database = FirebaseDatabase.instanceFor(
-        app: FirebaseAuth.instance.app,
-        databaseURL:
-            'https://quanlynhahang-d858b-default-rtdb.asia-southeast1.firebasedatabase.app',
-      );
+      final database = FirebaseDatabase.instance;
 
       await database.ref('users/$userId').update({
         'restaurantID': _myRestaurantId,
@@ -132,15 +126,19 @@ class _StaffManagementPageState extends State<StaffManagementPage> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Đã thêm nhân viên với vai trò ${UserRole.getDisplayName(role)}')),
+          SnackBar(
+            content: Text(
+              'Đã thêm nhân viên với vai trò ${UserRole.getDisplayName(role)}',
+            ),
+          ),
         );
       }
     } catch (e) {
       print('Error adding staff: $e');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Lỗi thêm nhân viên: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Lỗi thêm nhân viên: $e')));
       }
     }
   }
@@ -197,7 +195,9 @@ class _StaffManagementPageState extends State<StaffManagementPage> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Xác nhận'),
-        content: const Text('Bạn có chắc muốn xóa nhân viên này khỏi nhà hàng?'),
+        content: const Text(
+          'Bạn có chắc muốn xóa nhân viên này khỏi nhà hàng?',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
@@ -215,11 +215,7 @@ class _StaffManagementPageState extends State<StaffManagementPage> {
     if (confirm != true) return;
 
     try {
-      final database = FirebaseDatabase.instanceFor(
-        app: FirebaseAuth.instance.app,
-        databaseURL:
-            'https://quanlynhahang-d858b-default-rtdb.asia-southeast1.firebasedatabase.app',
-      );
+      final database = FirebaseDatabase.instance;
 
       await database.ref('users/$userId').update({
         'restaurantID': null,
@@ -236,9 +232,9 @@ class _StaffManagementPageState extends State<StaffManagementPage> {
     } catch (e) {
       print('Error removing staff: $e');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Lỗi xóa nhân viên: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Lỗi xóa nhân viên: $e')));
       }
     }
   }
@@ -274,10 +270,7 @@ class _StaffManagementPageState extends State<StaffManagementPage> {
               ),
               const Text(
                 'Chọn nhân viên để thêm',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 16),
               Expanded(
@@ -321,7 +314,9 @@ class _StaffManagementPageState extends State<StaffManagementPage> {
                             Navigator.of(context).pop();
                             _showRoleSelectionDialog(
                               user['id'],
-                              user['fullName'] ?? user['name'] ?? 'Không có tên',
+                              user['fullName'] ??
+                                  user['name'] ??
+                                  'Không có tên',
                             );
                           },
                           icon: const Icon(Icons.add, size: 16),
@@ -367,121 +362,112 @@ class _StaffManagementPageState extends State<StaffManagementPage> {
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _myRestaurantId == null
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.warning_amber_rounded,
-                        size: 80,
-                        color: Colors.orange.shade400,
-                      ),
-                      const SizedBox(height: 16),
-                      const Text(
-                        'Bạn chưa được gán vào nhà hàng nào',
-                        style: TextStyle(fontSize: 18),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Vui lòng liên hệ Admin để được gán',
-                        style: TextStyle(color: Colors.grey.shade600),
-                      ),
-                    ],
+          ? Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.warning_amber_rounded,
+                    size: 80,
+                    color: Colors.orange.shade400,
                   ),
-                )
-              : _myStaff.isEmpty
-                  ? Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.people_outline,
-                            size: 80,
-                            color: Colors.grey.shade400,
-                          ),
-                          const SizedBox(height: 16),
-                          Text(
-                            'Chưa có nhân viên nào',
-                            style: TextStyle(
-                              fontSize: 18,
-                              color: Colors.grey.shade600,
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          ElevatedButton.icon(
-                            onPressed: _showAvailableStaff,
-                            icon: const Icon(Icons.person_add),
-                            label: const Text('Thêm nhân viên'),
-                          ),
-                        ],
-                      ),
-                    )
-                  : ListView.builder(
-                      padding: const EdgeInsets.all(16),
-                      itemCount: _myStaff.length,
-                      itemBuilder: (context, index) {
-                        final staff = _myStaff[index];
-                        final isActive = staff['isActive'] ?? true;
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Bạn chưa được gán vào nhà hàng nào',
+                    style: TextStyle(fontSize: 18),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Vui lòng liên hệ Admin để được gán',
+                    style: TextStyle(color: Colors.grey.shade600),
+                  ),
+                ],
+              ),
+            )
+          : _myStaff.isEmpty
+          ? Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.people_outline,
+                    size: 80,
+                    color: Colors.grey.shade400,
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Chưa có nhân viên nào',
+                    style: TextStyle(fontSize: 18, color: Colors.grey.shade600),
+                  ),
+                  const SizedBox(height: 16),
+                  ElevatedButton.icon(
+                    onPressed: _showAvailableStaff,
+                    icon: const Icon(Icons.person_add),
+                    label: const Text('Thêm nhân viên'),
+                  ),
+                ],
+              ),
+            )
+          : ListView.builder(
+              padding: const EdgeInsets.all(16),
+              itemCount: _myStaff.length,
+              itemBuilder: (context, index) {
+                final staff = _myStaff[index];
+                final isActive = staff['isActive'] ?? true;
 
-                        return Card(
-                          margin: const EdgeInsets.only(bottom: 12),
-                          child: ListTile(
-                            leading: CircleAvatar(
-                              backgroundColor:
-                                  staff['role'] == UserRole.kitchen
-                                      ? Colors.orange.shade100
-                                      : Colors.blue.shade100,
-                              child: Icon(
-                                staff['role'] == UserRole.kitchen
-                                    ? Icons.restaurant
-                                    : Icons.shopping_cart,
-                                color: staff['role'] == UserRole.kitchen
-                                    ? Colors.orange
-                                    : Colors.blue,
-                              ),
-                            ),
-                            title: Text(
-                              staff['fullName'] ??
-                                  staff['name'] ??
-                                  'Không có tên',
-                              style:
-                                  const TextStyle(fontWeight: FontWeight.w500),
-                            ),
-                            subtitle: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(staff['email'] ?? ''),
-                                Text(
-                                  'SĐT: ${staff['phoneNumber'] ?? staff['phone'] ?? 'Chưa cập nhật'}',
-                                  style: TextStyle(color: Colors.grey.shade600),
-                                ),
-                                Text(
-                                  UserRole.getDisplayName(staff['role']),
-                                  style: const TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                                Text(
-                                  'Trạng thái: ${isActive ? 'Hoạt động' : 'Đã khóa'}',
-                                  style: TextStyle(
-                                    color: isActive ? Colors.green : Colors.red,
-                                    fontSize: 12,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            trailing: IconButton(
-                              icon: const Icon(Icons.remove_circle,
-                                  color: Colors.red),
-                              onPressed: () =>
-                                  _removeStaffFromRestaurant(staff['id']),
-                              tooltip: 'Xóa khỏi nhà hàng',
-                            ),
-                          ),
-                        );
-                      },
+                return Card(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  child: ListTile(
+                    leading: CircleAvatar(
+                      backgroundColor: staff['role'] == UserRole.kitchen
+                          ? Colors.orange.shade100
+                          : Colors.blue.shade100,
+                      child: Icon(
+                        staff['role'] == UserRole.kitchen
+                            ? Icons.restaurant
+                            : Icons.shopping_cart,
+                        color: staff['role'] == UserRole.kitchen
+                            ? Colors.orange
+                            : Colors.blue,
+                      ),
                     ),
+                    title: Text(
+                      staff['fullName'] ?? staff['name'] ?? 'Không có tên',
+                      style: const TextStyle(fontWeight: FontWeight.w500),
+                    ),
+                    subtitle: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(staff['email'] ?? ''),
+                        Text(
+                          'SĐT: ${staff['phoneNumber'] ?? staff['phone'] ?? 'Chưa cập nhật'}',
+                          style: TextStyle(color: Colors.grey.shade600),
+                        ),
+                        Text(
+                          UserRole.getDisplayName(staff['role']),
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        Text(
+                          'Trạng thái: ${isActive ? 'Hoạt động' : 'Đã khóa'}',
+                          style: TextStyle(
+                            color: isActive ? Colors.green : Colors.red,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ),
+                    trailing: IconButton(
+                      icon: const Icon(Icons.remove_circle, color: Colors.red),
+                      onPressed: () => _removeStaffFromRestaurant(staff['id']),
+                      tooltip: 'Xóa khỏi nhà hàng',
+                    ),
+                  ),
+                );
+              },
+            ),
     );
   }
 }

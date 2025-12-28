@@ -11,13 +11,10 @@ class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final LocalStorageService _localStorageService = LocalStorageService();
   final GoogleSignIn _googleSignIn = GoogleSignIn();
-  
+
   // Getter để lấy database instance
   FirebaseDatabase get _database {
-    return FirebaseDatabase.instanceFor(
-      app: Firebase.app(),
-      databaseURL: 'https://quanlynhahang-d858b-default-rtdb.asia-southeast1.firebasedatabase.app',
-    );
+    return FirebaseDatabase.instance;
   }
 
   // Đăng ký user mới
@@ -29,10 +26,8 @@ class AuthService {
   }) async {
     try {
       // Tạo account trên Firebase Authentication
-      UserCredential userCredential = await _auth.createUserWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
+      UserCredential userCredential = await _auth
+          .createUserWithEmailAndPassword(email: email, password: password);
 
       // Lưu thông tin user vào Realtime Database
       await _database.ref('users/${userCredential.user!.uid}').set({
@@ -78,7 +73,7 @@ class AuthService {
   }) async {
     try {
       print('Bắt đầu đăng nhập với email: $email');
-      
+
       UserCredential userCredential = await _auth.signInWithEmailAndPassword(
         email: email,
         password: password,
@@ -89,11 +84,14 @@ class AuthService {
       // Lấy thông tin user từ database và lưu vào local storage
       if (userCredential.user != null) {
         try {
-          DatabaseEvent event = await _database.ref('users/${userCredential.user!.uid}').once();
-          Map<dynamic, dynamic> userData = event.snapshot.value as Map<dynamic, dynamic>? ?? {};
-          
+          DatabaseEvent event = await _database
+              .ref('users/${userCredential.user!.uid}')
+              .once();
+          Map<dynamic, dynamic> userData =
+              event.snapshot.value as Map<dynamic, dynamic>? ?? {};
+
           print('Lấy dữ liệu user thành công: $userData');
-          
+
           await _localStorageService.saveUserData(
             userId: userCredential.user!.uid,
             email: email,
@@ -102,17 +100,20 @@ class AuthService {
             phoneNumber: userData['phoneNumber'] ?? '',
             restaurantID: userData['restaurantID'],
           );
-          
+
           // Lưu lịch sử đăng nhập
           try {
-            await _database.ref('users/${userCredential.user!.uid}/loginHistory').push().set({
-              'loginAt': DateTime.now().toIso8601String(),
-              'method': 'email',
-            });
+            await _database
+                .ref('users/${userCredential.user!.uid}/loginHistory')
+                .push()
+                .set({
+                  'loginAt': DateTime.now().toIso8601String(),
+                  'method': 'email',
+                });
           } catch (e) {
             print('Lỗi khi lưu lịch sử đăng nhập: $e');
           }
-          
+
           print('Lưu dữ liệu vào local storage thành công');
         } catch (dbError) {
           print('Lỗi khi lấy dữ liệu từ database: $dbError');
@@ -132,7 +133,7 @@ class AuthService {
     } on FirebaseAuthException catch (e) {
       print('FirebaseAuthException code: ${e.code}');
       print('FirebaseAuthException message: ${e.message}');
-      
+
       if (e.code == 'user-not-found') {
         throw Exception('User không tồn tại.');
       } else if (e.code == 'wrong-password') {
@@ -153,7 +154,7 @@ class AuthService {
   Future<UserCredential?> signInWithGoogle() async {
     try {
       print('Bắt đầu Google Sign-In');
-      
+
       // Đăng xuất Google trước để chọn tài khoản mới
       await _googleSignIn.signOut();
 
@@ -166,7 +167,8 @@ class AuthService {
       print('Google Sign-In thành công: ${googleUser.email}');
 
       // Lấy authentication từ Google
-      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+      final GoogleSignInAuthentication googleAuth =
+          await googleUser.authentication;
 
       // Tạo credential cho Firebase
       final AuthCredential credential = GoogleAuthProvider.credential(
@@ -175,16 +177,18 @@ class AuthService {
       );
 
       // Đăng nhập vào Firebase
-      final UserCredential userCredential = await _auth.signInWithCredential(credential);
+      final UserCredential userCredential = await _auth.signInWithCredential(
+        credential,
+      );
       final User? user = userCredential.user;
 
       if (user != null) {
         print('Firebase Sign-In thành công, user ID: ${user.uid}');
-        
+
         // Kiểm tra xem user đã tồn tại trong database chưa
         DatabaseEvent event = await _database.ref('users/${user.uid}').once();
         bool userExists = event.snapshot.exists;
-        
+
         String userRole = UserRole.order; // Role mặc định là KHÁCH HÀNG
         String fullName = user.displayName ?? 'Google User';
         String phoneNumber = user.phoneNumber ?? '';
@@ -206,7 +210,8 @@ class AuthService {
         } else {
           // User đã tồn tại, lấy role từ database
           print('User đã tồn tại, lấy thông tin từ database');
-          Map<dynamic, dynamic> userData = event.snapshot.value as Map<dynamic, dynamic>? ?? {};
+          Map<dynamic, dynamic> userData =
+              event.snapshot.value as Map<dynamic, dynamic>? ?? {};
           userRole = userData['role'] ?? UserRole.order;
           fullName = userData['fullName'] ?? fullName;
           phoneNumber = userData['phoneNumber'] ?? phoneNumber;
@@ -225,7 +230,8 @@ class AuthService {
         // Lấy restaurantID từ database
         String? restaurantID;
         if (userExists) {
-          Map<dynamic, dynamic> userData = event.snapshot.value as Map<dynamic, dynamic>? ?? {};
+          Map<dynamic, dynamic> userData =
+              event.snapshot.value as Map<dynamic, dynamic>? ?? {};
           restaurantID = userData['restaurantID'];
         }
 
@@ -238,7 +244,7 @@ class AuthService {
           phoneNumber: phoneNumber,
           restaurantID: restaurantID,
         );
-        
+
         // Lưu lịch sử đăng nhập
         try {
           await _database.ref('users/${user.uid}/loginHistory').push().set({
@@ -248,15 +254,19 @@ class AuthService {
         } catch (e) {
           print('Lỗi khi lưu lịch sử đăng nhập: $e');
         }
-        
-        print('Lưu thông tin user vào local storage thành công với role: $userRole');
+
+        print(
+          'Lưu thông tin user vào local storage thành công với role: $userRole',
+        );
       }
 
       return userCredential;
     } on FirebaseAuthException catch (e) {
       print('Firebase Auth Error: ${e.code} - ${e.message}');
       if (e.code == 'invalid-credential') {
-        throw Exception('Credential không hợp lệ. Vui lòng kiểm tra cấu hình Firebase.');
+        throw Exception(
+          'Credential không hợp lệ. Vui lòng kiểm tra cấu hình Firebase.',
+        );
       }
       throw Exception('Đăng nhập Google thất bại: ${e.message}');
     } catch (e) {

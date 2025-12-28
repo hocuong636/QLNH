@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:quanlynhahang/services/order_service.dart';
 import 'package:quanlynhahang/services/local_storage_service.dart';
 import 'package:quanlynhahang/models/order.dart';
+import 'package:quanlynhahang/constants/order_status_config.dart';
+import 'package:firebase_database/firebase_database.dart';
+import 'dart:async';
 
 class OrderStatusPage extends StatefulWidget {
   const OrderStatusPage({super.key});
@@ -15,15 +18,24 @@ class _OrderStatusPageState extends State<OrderStatusPage> {
   final LocalStorageService _localStorageService = LocalStorageService();
   List<Order> _orders = [];
   bool _isLoading = true;
+  DatabaseReference? _ordersRef;
+  StreamSubscription<DatabaseEvent>? _ordersSubscription;
 
   @override
   void initState() {
     super.initState();
-    _loadOrders();
+    _setupRealtimeUpdates();
   }
 
-  Future<void> _loadOrders() async {
+  @override
+  void dispose() {
+    _ordersSubscription?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _setupRealtimeUpdates() async {
     setState(() => _isLoading = true);
+
     try {
       String? restaurantId = _localStorageService.getRestaurantId();
 
@@ -36,18 +48,40 @@ class _OrderStatusPageState extends State<OrderStatusPage> {
       }
 
       if (restaurantId != null && restaurantId.isNotEmpty) {
-        _orders = await _orderService.getOrders(restaurantId);
-        // Lọc chỉ lấy đơn hàng đang active (chưa thanh toán)
-        _orders = _orders
-            .where((order) => order.status != OrderStatus.paid)
-            .toList();
+        // Setup realtime listener
+        _ordersRef = FirebaseDatabase.instance.ref('orders');
+
+        _ordersSubscription = _ordersRef!.onValue.listen((event) {
+          _loadOrdersRealtime(restaurantId!);
+        });
+
+        // Initial load
+        await _loadOrdersRealtime(restaurantId);
       } else {
-        _orders = [];
+        setState(() => _isLoading = false);
       }
     } catch (e) {
-      _showSnackBar('Lỗi khi tải đơn hàng: $e');
-    } finally {
+      print('OrderStatusPage: Error setting up realtime updates: $e');
       setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _loadOrdersRealtime(String restaurantId) async {
+    try {
+      _orders = await _orderService.getOrders(restaurantId);
+      // Lọc chỉ lấy đơn hàng đang active (chưa thanh toán)
+      _orders = _orders
+          .where((order) => order.status != OrderStatus.paid)
+          .toList();
+
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    } catch (e) {
+      print('Error loading orders realtime: $e');
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
@@ -58,32 +92,20 @@ class _OrderStatusPageState extends State<OrderStatusPage> {
   }
 
   String _getStatusText(OrderStatus status) {
-    switch (status) {
-      case OrderStatus.new_:
-        return 'Mới';
-      case OrderStatus.cooking:
-        return 'Đang chế biến';
-      case OrderStatus.done:
-        return 'Hoàn thành';
-      case OrderStatus.paid:
-        return 'Đã thanh toán';
-    }
+    return OrderStatusConfig.getStatusText(status);
   }
 
   Color _getStatusColor(OrderStatus status) {
-    switch (status) {
-      case OrderStatus.new_:
-        return Colors.blue;
-      case OrderStatus.cooking:
-        return Colors.orange;
-      case OrderStatus.done:
-        return Colors.green;
-      case OrderStatus.paid:
-        return Colors.grey;
-    }
+    return OrderStatusConfig.getStatusColor(status);
   }
 
   Future<void> _updateOrderStatus(Order order, OrderStatus newStatus) async {
+    // Check if order staff can update this status
+    if (!OrderStatusConfig.canUpdateStatus(order.status, 'ORDER')) {
+      _showSnackBar('Bạn không có quyền cập nhật trạng thái này');
+      return;
+    }
+
     try {
       Order updatedOrder = order.copyWith(
         status: newStatus,
@@ -92,7 +114,7 @@ class _OrderStatusPageState extends State<OrderStatusPage> {
       bool success = await _orderService.updateOrder(updatedOrder);
       if (success) {
         _showSnackBar('Cập nhật trạng thái thành công');
-        _loadOrders(); // Reload để cập nhật UI
+        // No need to reload - realtime listener will update automatically
       } else {
         _showSnackBar('Lỗi khi cập nhật trạng thái');
       }
@@ -107,7 +129,13 @@ class _OrderStatusPageState extends State<OrderStatusPage> {
       context,
       '/order/create_order',
       arguments: order, // Pass order data for editing
-    ).then((_) => _loadOrders()); // Reload after returning
+    ).then((_) {
+      // Reload after returning
+      final restaurantId = _localStorageService.getRestaurantId();
+      if (restaurantId != null) {
+        _loadOrdersRealtime(restaurantId);
+      }
+    });
   }
 
   @override
@@ -129,7 +157,12 @@ class _OrderStatusPageState extends State<OrderStatusPage> {
               ),
             )
           : RefreshIndicator(
-              onRefresh: _loadOrders,
+              onRefresh: () async {
+                final restaurantId = _localStorageService.getRestaurantId();
+                if (restaurantId != null) {
+                  await _loadOrdersRealtime(restaurantId);
+                }
+              },
               child: ListView.builder(
                 padding: const EdgeInsets.all(16),
                 itemCount: _orders.length,
@@ -145,11 +178,14 @@ class _OrderStatusPageState extends State<OrderStatusPage> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text(
-                                'Đơn hàng #${order.id.substring(0, 8)}',
-                                style: const TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
+                              Expanded(
+                                child: Text(
+                                  'Đơn hàng #${order.id.substring(0, 8)}',
+                                  style: const TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
                                 ),
                               ),
                               Container(
@@ -158,15 +194,35 @@ class _OrderStatusPageState extends State<OrderStatusPage> {
                                   vertical: 6,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: _getStatusColor(order.status),
+                                  color:
+                                      OrderStatusConfig.getStatusBackgroundColor(
+                                        order.status,
+                                      ),
                                   borderRadius: BorderRadius.circular(20),
-                                ),
-                                child: Text(
-                                  _getStatusText(order.status),
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w500,
+                                  border: Border.all(
+                                    color: _getStatusColor(order.status),
+                                    width: 1,
                                   ),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      OrderStatusConfig.getStatusIcon(
+                                        order.status,
+                                      ),
+                                      color: _getStatusColor(order.status),
+                                      size: 16,
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      _getStatusText(order.status),
+                                      style: TextStyle(
+                                        color: _getStatusColor(order.status),
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
                             ],

@@ -40,11 +40,7 @@ class _SystemSettingsPageState extends State<SystemSettingsPage> {
     setState(() => _isLoading = true);
 
     try {
-      final database = FirebaseDatabase.instanceFor(
-        app: FirebaseAuth.instance.app,
-        databaseURL:
-            'https://quanlynhahang-d858b-default-rtdb.asia-southeast1.firebasedatabase.app',
-      );
+      final database = FirebaseDatabase.instance;
 
       final snapshot = await database.ref('system_settings').get();
 
@@ -94,11 +90,7 @@ class _SystemSettingsPageState extends State<SystemSettingsPage> {
     setState(() => _isSaving = true);
 
     try {
-      final database = FirebaseDatabase.instanceFor(
-        app: FirebaseAuth.instance.app,
-        databaseURL:
-            'https://quanlynhahang-d858b-default-rtdb.asia-southeast1.firebasedatabase.app',
-      );
+      final database = FirebaseDatabase.instance;
 
       final updatedSettings = {
         ..._settings,
@@ -142,11 +134,7 @@ class _SystemSettingsPageState extends State<SystemSettingsPage> {
     }
 
     try {
-      final database = FirebaseDatabase.instanceFor(
-        app: FirebaseAuth.instance.app,
-        databaseURL:
-            'https://quanlynhahang-d858b-default-rtdb.asia-southeast1.firebasedatabase.app',
-      );
+      final database = FirebaseDatabase.instance;
 
       final notification = {
         'title': _notificationTitleController.text,
@@ -385,7 +373,9 @@ class _SystemSettingsPageState extends State<SystemSettingsPage> {
                                     children: [
                                       Text(notification['message'] ?? ''),
                                       Text(
-                                        timestamp.toLocal().toString().split('.')[0],
+                                        timestamp.toLocal().toString().split(
+                                          '.',
+                                        )[0],
                                         style: TextStyle(
                                           color: Colors.grey.shade600,
                                           fontSize: 12,

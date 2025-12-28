@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:quanlynhahang/services/order_service.dart';
 import 'package:quanlynhahang/services/local_storage_service.dart';
 import 'package:quanlynhahang/models/order.dart';
+import 'package:quanlynhahang/constants/order_status_config.dart';
+import 'package:firebase_database/firebase_database.dart';
+import 'dart:async';
 
 class OrderManagementPage extends StatefulWidget {
   const OrderManagementPage({super.key});
@@ -15,30 +18,70 @@ class _OrderManagementPageState extends State<OrderManagementPage> {
   final LocalStorageService _localStorageService = LocalStorageService();
   List<Order> _orders = [];
   bool _isLoading = true;
+  DatabaseReference? _ordersRef;
+  StreamSubscription<DatabaseEvent>? _ordersSubscription;
 
   @override
   void initState() {
     super.initState();
-    _loadOrders();
+    _setupRealtimeUpdates();
   }
 
-  Future<void> _loadOrders() async {
+  @override
+  void dispose() {
+    _ordersSubscription?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _setupRealtimeUpdates() async {
     setState(() => _isLoading = true);
+
     try {
       String? ownerId = _localStorageService.getUserId();
       if (ownerId != null) {
         String? restaurantId = await _orderService.getRestaurantIdByOwnerId(
           ownerId,
         );
+
         if (restaurantId != null) {
-          _orders = await _orderService.getOrders(restaurantId);
-          _orders.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+          _ordersRef = FirebaseDatabase.instance.ref('orders');
+
+          _ordersSubscription = _ordersRef!.onValue.listen((event) {
+            _loadOrdersRealtime(ownerId);
+          });
+
+          // Initial load
+          await _loadOrdersRealtime(ownerId);
+        } else {
+          setState(() => _isLoading = false);
+        }
+      } else {
+        setState(() => _isLoading = false);
+      }
+    } catch (e) {
+      print('Error setting up realtime updates: $e');
+      setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _loadOrdersRealtime(String ownerId) async {
+    try {
+      String? restaurantId = await _orderService.getRestaurantIdByOwnerId(
+        ownerId,
+      );
+      if (restaurantId != null) {
+        _orders = await _orderService.getOrders(restaurantId);
+        _orders.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+
+        if (mounted) {
+          setState(() => _isLoading = false);
         }
       }
     } catch (e) {
-      _showSnackBar('Lỗi khi tải danh sách đơn hàng: $e');
-    } finally {
-      setState(() => _isLoading = false);
+      print('Error loading orders realtime: $e');
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
@@ -119,7 +162,7 @@ class _OrderManagementPageState extends State<OrderManagementPage> {
                 Navigator.of(context).pop();
               },
               child: Text(
-                'Chuyển ${_getStatusDisplayName(_getNextStatus(order.status))}',
+                'Chuyển ${OrderStatusConfig.getStatusText(_getNextStatus(order.status))}',
               ),
             ),
         ],
@@ -147,32 +190,16 @@ class _OrderManagementPageState extends State<OrderManagementPage> {
   }
 
   OrderStatus _getNextStatus(OrderStatus currentStatus) {
-    switch (currentStatus) {
-      case OrderStatus.new_:
-        return OrderStatus.cooking;
-      case OrderStatus.cooking:
-        return OrderStatus.done;
-      case OrderStatus.done:
-        return OrderStatus.done;
-      case OrderStatus.paid:
-        return OrderStatus.paid;
-    }
-  }
-
-  String _getStatusDisplayName(OrderStatus status) {
-    switch (status) {
-      case OrderStatus.new_:
-        return 'Mới';
-      case OrderStatus.cooking:
-        return 'Đang nấu';
-      case OrderStatus.done:
-        return 'Hoàn thành';
-      case OrderStatus.paid:
-        return 'Đã thanh toán';
-    }
+    return OrderStatusConfig.getNextStatus(currentStatus) ?? currentStatus;
   }
 
   Future<void> _updateOrderStatus(Order order, OrderStatus newStatus) async {
+    // Owner can update any status
+    if (!OrderStatusConfig.canUpdateStatus(order.status, 'OWNER')) {
+      _showSnackBar('Bạn không có quyền cập nhật trạng thái này');
+      return;
+    }
+
     try {
       Order updatedOrder = Order(
         id: order.id,
@@ -190,7 +217,7 @@ class _OrderManagementPageState extends State<OrderManagementPage> {
 
       await _orderService.updateOrder(updatedOrder);
       _showSnackBar('Cập nhật trạng thái đơn hàng thành công');
-      _loadOrders();
+      // No need to reload - realtime listener will update automatically
     } catch (e) {
       _showSnackBar('Lỗi khi cập nhật trạng thái: $e');
     }
@@ -290,7 +317,7 @@ class _OrderManagementPageState extends State<OrderManagementPage> {
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Text(
-                          _getStatusDisplayName(order.status),
+                          OrderStatusConfig.getStatusText(order.status),
                           style: TextStyle(
                             color: _getStatusColor(order.status),
                             fontSize: 12,

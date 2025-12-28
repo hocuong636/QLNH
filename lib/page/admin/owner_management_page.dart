@@ -41,11 +41,7 @@ class _OwnerManagementPageState extends State<OwnerManagementPage> {
     setState(() => _isLoading = true);
 
     try {
-      final database = FirebaseDatabase.instanceFor(
-        app: FirebaseAuth.instance.app,
-        databaseURL:
-            'https://quanlynhahang-d858b-default-rtdb.asia-southeast1.firebasedatabase.app',
-      );
+      final database = FirebaseDatabase.instance;
 
       final snapshot = await database.ref('users').get();
 
@@ -79,11 +75,7 @@ class _OwnerManagementPageState extends State<OwnerManagementPage> {
 
   Future<void> _loadRestaurants() async {
     try {
-      final database = FirebaseDatabase.instanceFor(
-        app: FirebaseAuth.instance.app,
-        databaseURL:
-            'https://quanlynhahang-d858b-default-rtdb.asia-southeast1.firebasedatabase.app',
-      );
+      final database = FirebaseDatabase.instance;
 
       final snapshot = await database.ref('restaurants').get();
 
@@ -114,7 +106,9 @@ class _OwnerManagementPageState extends State<OwnerManagementPage> {
     // Lọc các nhà hàng chưa có owner hoặc đã có owner này
     final availableRestaurants = _restaurants.where((r) {
       final restaurantOwnerId = r['ownerId'] as String?;
-      return restaurantOwnerId == null || restaurantOwnerId.isEmpty || restaurantOwnerId == ownerId;
+      return restaurantOwnerId == null ||
+          restaurantOwnerId.isEmpty ||
+          restaurantOwnerId == ownerId;
     }).toList();
 
     if (availableRestaurants.isEmpty) {
@@ -180,13 +174,12 @@ class _OwnerManagementPageState extends State<OwnerManagementPage> {
     );
   }
 
-  Future<void> _updateOwnerRestaurant(String ownerId, String restaurantId) async {
+  Future<void> _updateOwnerRestaurant(
+    String ownerId,
+    String restaurantId,
+  ) async {
     try {
-      final database = FirebaseDatabase.instanceFor(
-        app: FirebaseAuth.instance.app,
-        databaseURL:
-            'https://quanlynhahang-d858b-default-rtdb.asia-southeast1.firebasedatabase.app',
-      );
+      final database = FirebaseDatabase.instance;
 
       // Cập nhật restaurantID cho owner
       await database.ref('users/$ownerId').update({
@@ -211,9 +204,9 @@ class _OwnerManagementPageState extends State<OwnerManagementPage> {
     } catch (e) {
       print('Error assigning restaurant: $e');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Lỗi gán nhà hàng: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Lỗi gán nhà hàng: $e')));
       }
     }
   }
@@ -239,11 +232,7 @@ class _OwnerManagementPageState extends State<OwnerManagementPage> {
           );
 
       // Add user data to database
-      final database = FirebaseDatabase.instanceFor(
-        app: FirebaseAuth.instance.app,
-        databaseURL:
-            'https://quanlynhahang-d858b-default-rtdb.asia-southeast1.firebasedatabase.app',
-      );
+      final database = FirebaseDatabase.instance;
 
       await database.ref('users/${userCredential.user!.uid}').set({
         'email': _emailController.text.trim(),
@@ -285,11 +274,7 @@ class _OwnerManagementPageState extends State<OwnerManagementPage> {
 
   Future<void> _toggleOwnerStatus(String ownerId, bool currentStatus) async {
     try {
-      final database = FirebaseDatabase.instanceFor(
-        app: FirebaseAuth.instance.app,
-        databaseURL:
-            'https://quanlynhahang-d858b-default-rtdb.asia-southeast1.firebasedatabase.app',
-      );
+      final database = FirebaseDatabase.instance;
 
       await database.ref('users/$ownerId').update({
         'isActive': !currentStatus,
@@ -439,7 +424,7 @@ class _OwnerManagementPageState extends State<OwnerManagementPage> {
                 final owner = _owners[index];
                 final isActive = owner['isActive'] ?? true;
                 final restaurantID = owner['restaurantID'];
-                
+
                 // Tìm tên nhà hàng nếu có
                 String restaurantName = 'Chưa gán';
                 if (restaurantID != null) {
@@ -477,7 +462,9 @@ class _OwnerManagementPageState extends State<OwnerManagementPage> {
                         Text(
                           'Nhà hàng: $restaurantName',
                           style: TextStyle(
-                            color: restaurantID != null ? Colors.blue : Colors.orange,
+                            color: restaurantID != null
+                                ? Colors.blue
+                                : Colors.orange,
                             fontSize: 12,
                             fontWeight: FontWeight.w500,
                           ),
@@ -495,7 +482,10 @@ class _OwnerManagementPageState extends State<OwnerManagementPage> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         IconButton(
-                          icon: const Icon(Icons.restaurant, color: Colors.blue),
+                          icon: const Icon(
+                            Icons.restaurant,
+                            color: Colors.blue,
+                          ),
                           onPressed: () => _assignRestaurant(
                             owner['id'],
                             owner['name'] ?? owner['email'] ?? 'Owner',

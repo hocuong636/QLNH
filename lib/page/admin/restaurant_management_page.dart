@@ -51,11 +51,7 @@ class _RestaurantManagementPageState extends State<RestaurantManagementPage> {
     setState(() => _isLoading = true);
 
     try {
-      final database = FirebaseDatabase.instanceFor(
-        app: FirebaseAuth.instance.app,
-        databaseURL:
-            'https://quanlynhahang-d858b-default-rtdb.asia-southeast1.firebasedatabase.app',
-      );
+      final database = FirebaseDatabase.instance;
 
       final snapshot = await database.ref('restaurants').get();
 
@@ -97,11 +93,7 @@ class _RestaurantManagementPageState extends State<RestaurantManagementPage> {
 
   Future<void> _loadOwners() async {
     try {
-      final database = FirebaseDatabase.instanceFor(
-        app: FirebaseAuth.instance.app,
-        databaseURL:
-            'https://quanlynhahang-d858b-default-rtdb.asia-southeast1.firebasedatabase.app',
-      );
+      final database = FirebaseDatabase.instance;
 
       final snapshot = await database.ref('users').get();
 
@@ -144,11 +136,7 @@ class _RestaurantManagementPageState extends State<RestaurantManagementPage> {
     }
 
     try {
-      final database = FirebaseDatabase.instanceFor(
-        app: FirebaseAuth.instance.app,
-        databaseURL:
-            'https://quanlynhahang-d858b-default-rtdb.asia-southeast1.firebasedatabase.app',
-      );
+      final database = FirebaseDatabase.instance;
 
       final newRestaurantRef = database.ref('restaurants').push();
       final restaurantId = newRestaurantRef.key!;
@@ -203,11 +191,7 @@ class _RestaurantManagementPageState extends State<RestaurantManagementPage> {
     bool currentStatus,
   ) async {
     try {
-      final database = FirebaseDatabase.instanceFor(
-        app: FirebaseAuth.instance.app,
-        databaseURL:
-            'https://quanlynhahang-d858b-default-rtdb.asia-southeast1.firebasedatabase.app',
-      );
+      final database = FirebaseDatabase.instance;
 
       await database.ref('restaurants/$restaurantId').update({
         'isOpen': !currentStatus,

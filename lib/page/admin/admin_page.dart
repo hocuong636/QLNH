@@ -19,11 +19,7 @@ class _AdminPageState extends State<AdminPage> with TickerProviderStateMixin {
 
   // Sử dụng cùng database instance như AuthService
   FirebaseDatabase get _database {
-    return FirebaseDatabase.instanceFor(
-      app: Firebase.app(),
-      databaseURL:
-          'https://quanlynhahang-d858b-default-rtdb.asia-southeast1.firebasedatabase.app',
-    );
+    return FirebaseDatabase.instance;
   }
 
   DatabaseReference get _dbRef => _database.ref();

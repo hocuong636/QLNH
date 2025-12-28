@@ -2,13 +2,10 @@ import 'package:firebase_database/firebase_database.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:quanlynhahang/models/inventory_item.dart';
 import 'package:quanlynhahang/models/inventory_history.dart';
+import 'package:quanlynhahang/models/inventory_check.dart';
 
 class InventoryService {
-  final FirebaseDatabase _database = FirebaseDatabase.instanceFor(
-    app: Firebase.app(),
-    databaseURL:
-        'https://quanlynhahang-d858b-default-rtdb.asia-southeast1.firebasedatabase.app',
-  );
+  final FirebaseDatabase _database = FirebaseDatabase.instance;
 
   // Get inventory items by restaurant ID
   Future<List<InventoryItem>> getInventoryItems(String restaurantId) async {
@@ -195,6 +192,84 @@ class InventoryService {
     } catch (e) {
       print('Error getting restaurant ID by owner ID: $e');
       return null;
+    }
+  }
+
+  // Create inventory check
+  Future<String?> createInventoryCheck(InventoryCheck check) async {
+    try {
+      DatabaseReference ref = _database.ref('inventory_checks').push();
+      await ref.set(check.toJson());
+      return ref.key;
+    } catch (e) {
+      print('Error creating inventory check: $e');
+      return null;
+    }
+  }
+
+  // Get inventory checks by restaurant ID
+  Future<List<InventoryCheck>> getInventoryChecks(String restaurantId) async {
+    try {
+      DatabaseReference ref = _database.ref('inventory_checks');
+      DataSnapshot snapshot = await ref
+          .orderByChild('restaurantID')
+          .equalTo(restaurantId)
+          .get();
+
+      List<InventoryCheck> checks = [];
+      if (snapshot.exists && snapshot.value != null) {
+        Map<dynamic, dynamic> checkData =
+            snapshot.value as Map<dynamic, dynamic>;
+        checkData.forEach((key, value) {
+          if (value is Map) {
+            Map<dynamic, dynamic> rawMap = value as Map<dynamic, dynamic>;
+            Map<String, dynamic> checkMap = {};
+            rawMap.forEach((k, v) {
+              checkMap[k.toString()] = v;
+            });
+            checkMap['id'] = key.toString();
+            checks.add(InventoryCheck.fromJson(checkMap));
+          }
+        });
+      }
+      checks.sort((a, b) => b.checkedAt.compareTo(a.checkedAt));
+      return checks;
+    } catch (e) {
+      print('Error getting inventory checks: $e');
+      return [];
+    }
+  }
+
+  // Get inventory checks by item ID
+  Future<List<InventoryCheck>> getInventoryChecksByItem(String itemId) async {
+    try {
+      DatabaseReference ref = _database.ref('inventory_checks');
+      DataSnapshot snapshot = await ref
+          .orderByChild('inventoryItemId')
+          .equalTo(itemId)
+          .get();
+
+      List<InventoryCheck> checks = [];
+      if (snapshot.exists && snapshot.value != null) {
+        Map<dynamic, dynamic> checkData =
+            snapshot.value as Map<dynamic, dynamic>;
+        checkData.forEach((key, value) {
+          if (value is Map) {
+            Map<dynamic, dynamic> rawMap = value as Map<dynamic, dynamic>;
+            Map<String, dynamic> checkMap = {};
+            rawMap.forEach((k, v) {
+              checkMap[k.toString()] = v;
+            });
+            checkMap['id'] = key.toString();
+            checks.add(InventoryCheck.fromJson(checkMap));
+          }
+        });
+      }
+      checks.sort((a, b) => b.checkedAt.compareTo(a.checkedAt));
+      return checks;
+    } catch (e) {
+      print('Error getting inventory checks by item: $e');
+      return [];
     }
   }
 }

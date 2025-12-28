@@ -3,11 +3,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:quanlynhahang/models/order.dart';
 
 class OrderService {
-  final FirebaseDatabase _database = FirebaseDatabase.instanceFor(
-    app: Firebase.app(),
-    databaseURL:
-        'https://quanlynhahang-d858b-default-rtdb.asia-southeast1.firebasedatabase.app',
-  );
+  final FirebaseDatabase _database = FirebaseDatabase.instance;
 
   // Get orders by restaurant ID
   Future<List<Order>> getOrders(String restaurantId) async {

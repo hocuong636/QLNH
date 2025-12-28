@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:quanlynhahang/services/auth_service.dart';
 import 'package:quanlynhahang/services/local_storage_service.dart';
-import 'package:quanlynhahang/constants/user_roles.dart';
 import '../shared/profile_page.dart';
+import 'kitchen_orders_page.dart';
+import 'kitchen_inventory_page.dart';
 
 class KitchenPage extends StatefulWidget {
   const KitchenPage({super.key});
@@ -37,7 +38,9 @@ class _KitchenPageState extends State<KitchenPage> {
             TextButton(
               onPressed: () {
                 _authService.signOut();
-                Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false);
+                Navigator.of(
+                  context,
+                ).pushNamedAndRemoveUntil('/login', (route) => false);
               },
               child: const Text('Đăng Xuất'),
             ),
@@ -50,9 +53,10 @@ class _KitchenPageState extends State<KitchenPage> {
   @override
   Widget build(BuildContext context) {
     String? userName = _localStorageService.getUserName();
-    
+
     List<Widget> pages = [
-      _buildDashboardPage(userName),
+      KitchenOrdersPage(),
+      KitchenInventoryPage(),
       const ProfilePage(),
     ];
 
@@ -60,10 +64,7 @@ class _KitchenPageState extends State<KitchenPage> {
       appBar: AppBar(
         title: Text(
           'Xin chào, ${userName ?? 'Bếp'}',
-          style: const TextStyle(
-            fontWeight: FontWeight.w600,
-            fontSize: 18,
-          ),
+          style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 18),
         ),
         centerTitle: false,
         elevation: 0,
@@ -77,10 +78,7 @@ class _KitchenPageState extends State<KitchenPage> {
           ),
         ],
       ),
-      body: Container(
-        color: Colors.grey.shade50,
-        child: pages[_selectedIndex],
-      ),
+      body: Container(color: Colors.grey.shade50, child: pages[_selectedIndex]),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,
@@ -94,6 +92,11 @@ class _KitchenPageState extends State<KitchenPage> {
             label: 'Đơn Hàng',
           ),
           BottomNavigationBarItem(
+            icon: Icon(Icons.inventory_outlined),
+            activeIcon: Icon(Icons.inventory),
+            label: 'Kiểm Kho',
+          ),
+          BottomNavigationBarItem(
             icon: Icon(Icons.person_outline),
             activeIcon: Icon(Icons.person),
             label: 'Hồ Sơ',
@@ -102,67 +105,4 @@ class _KitchenPageState extends State<KitchenPage> {
       ),
     );
   }
-
-  Widget _buildDashboardPage(String? userName) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(20.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const SizedBox(height: 10),
-          Text(
-            'Dashboard - ${UserRole.getDisplayName(_localStorageService.getUserRole())}',
-            style: const TextStyle(
-              fontSize: 28,
-              fontWeight: FontWeight.bold,
-              color: Colors.black87,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Quản lý đơn hàng bếp',
-            style: TextStyle(
-              fontSize: 16,
-              color: Colors.grey.shade600,
-            ),
-          ),
-          const SizedBox(height: 30),
-          Card(
-            elevation: 2,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Container(
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(12),
-                color: Colors.white,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Chức năng sắp có',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    'Các chức năng quản lý đơn hàng bếp sẽ được cập nhật sớm.',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey.shade600,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 }
-

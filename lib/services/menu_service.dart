@@ -3,11 +3,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:quanlynhahang/models/menu_item.dart';
 
 class MenuService {
-  final FirebaseDatabase _database = FirebaseDatabase.instanceFor(
-    app: Firebase.app(),
-    databaseURL:
-        'https://quanlynhahang-d858b-default-rtdb.asia-southeast1.firebasedatabase.app',
-  );
+  final FirebaseDatabase _database = FirebaseDatabase.instance;
 
   // Get all menu items (for single restaurant app)
   Future<List<MenuItem>> getMenuItems([String? restaurantId]) async {
