@@ -18,7 +18,12 @@ class _TableManagementPageState extends State<TableManagementPage> {
   List<TableModel> _filteredTables = [];
   bool _isLoading = true;
   String _selectedStatus = 'Tất cả';
-  final List<String> _statusOptions = ['Tất cả', 'Trống', 'Đang phục vụ', 'Đã đặt'];
+  final List<String> _statusOptions = [
+    'Tất cả',
+    'Trống',
+    'Đang phục vụ',
+    'Đã đặt',
+  ];
 
   @override
   void initState() {
@@ -38,7 +43,9 @@ class _TableManagementPageState extends State<TableManagementPage> {
     try {
       String? restaurantId = _localStorageService.getRestaurantId();
       if (restaurantId == null || restaurantId.isEmpty) {
-        _showSnackBar('Bạn chưa được gán vào nhà hàng nào. Vui lòng liên hệ Admin.');
+        _showSnackBar(
+          'Bạn chưa được gán vào nhà hàng nào. Vui lòng liên hệ Admin.',
+        );
         setState(() => _isLoading = false);
         return;
       }
@@ -54,10 +61,11 @@ class _TableManagementPageState extends State<TableManagementPage> {
   void _filterTables() {
     setState(() {
       _filteredTables = _tables.where((table) {
-        final matchesSearch = table.number
-            .toString()
-            .contains(_searchController.text);
-        final matchesStatus = _selectedStatus == 'Tất cả' ||
+        final matchesSearch = table.number.toString().contains(
+          _searchController.text,
+        );
+        final matchesStatus =
+            _selectedStatus == 'Tất cả' ||
             _getStatusDisplayName(table.status) == _selectedStatus;
         return matchesSearch && matchesStatus;
       }).toList();
@@ -128,10 +136,12 @@ class _TableManagementPageState extends State<TableManagementPage> {
                   ),
                   items: _statusOptions
                       .where((status) => status != 'Tất cả')
-                      .map((status) => DropdownMenuItem(
-                            value: status,
-                            child: Text(status),
-                          ))
+                      .map(
+                        (status) => DropdownMenuItem(
+                          value: status,
+                          child: Text(status),
+                        ),
+                      )
                       .toList(),
                   onChanged: (value) {
                     setDialogState(() {
@@ -158,7 +168,9 @@ class _TableManagementPageState extends State<TableManagementPage> {
                 try {
                   String? restaurantId = _localStorageService.getRestaurantId();
                   if (restaurantId == null || restaurantId.isEmpty) {
-                    _showSnackBar('Bạn chưa được gán vào nhà hàng nào. Vui lòng liên hệ Admin.');
+                    _showSnackBar(
+                      'Bạn chưa được gán vào nhà hàng nào. Vui lòng liên hệ Admin.',
+                    );
                     return;
                   }
                   TableStatus status = _parseStatusString(selectedStatus);
@@ -199,9 +211,11 @@ class _TableManagementPageState extends State<TableManagementPage> {
     // Tìm số bàn lớn nhất hiện có
     int maxTableNumber = 0;
     if (_tables.isNotEmpty) {
-      maxTableNumber = _tables.map((t) => t.number).reduce((a, b) => a > b ? a : b);
+      maxTableNumber = _tables
+          .map((t) => t.number)
+          .reduce((a, b) => a > b ? a : b);
     }
-    
+
     final startNumberController = TextEditingController(
       text: (maxTableNumber + 1).toString(),
     );
@@ -228,9 +242,9 @@ class _TableManagementPageState extends State<TableManagementPage> {
                       labelText: 'Số bàn bắt đầu *',
                       border: const OutlineInputBorder(),
                       prefixIcon: const Icon(Icons.play_arrow),
-                      helperText: _tables.isEmpty 
-                        ? 'VD: 1'
-                        : 'Số bàn lớn nhất hiện tại: $maxTableNumber',
+                      helperText: _tables.isEmpty
+                          ? 'VD: 1'
+                          : 'Số bàn lớn nhất hiện tại: $maxTableNumber',
                       isDense: true,
                     ),
                     keyboardType: TextInputType.number,
@@ -269,7 +283,8 @@ class _TableManagementPageState extends State<TableManagementPage> {
                     ),
                     child: Row(
                       children: [
-                        Icon(Icons.info_outline, 
+                        Icon(
+                          Icons.info_outline,
                           color: Colors.blue.shade700,
                           size: 18,
                         ),
@@ -338,11 +353,13 @@ class _TableManagementPageState extends State<TableManagementPage> {
                       setDialogState(() => isAdding = true);
 
                       try {
-                        String? restaurantId =
-                            _localStorageService.getRestaurantId();
+                        String? restaurantId = _localStorageService
+                            .getRestaurantId();
                         if (restaurantId == null || restaurantId.isEmpty) {
                           setDialogState(() => isAdding = false);
-                          _showSnackBar('Bạn chưa được gán vào nhà hàng nào. Vui lòng liên hệ Admin.');
+                          _showSnackBar(
+                            'Bạn chưa được gán vào nhà hàng nào. Vui lòng liên hệ Admin.',
+                          );
                           return;
                         }
                         int successCount = 0;
@@ -359,8 +376,9 @@ class _TableManagementPageState extends State<TableManagementPage> {
                             updatedAt: DateTime.now(),
                           );
 
-                          String? result =
-                              await _tableService.createTable(newTable);
+                          String? result = await _tableService.createTable(
+                            newTable,
+                          );
                           if (result != null) {
                             successCount++;
                           } else {
@@ -483,6 +501,28 @@ class _TableManagementPageState extends State<TableManagementPage> {
                 ),
               ],
             ),
+            if (table.status == TableStatus.reserved &&
+                table.reservedAt != null) ...[
+              const SizedBox(height: 12),
+              _buildDetailRow(
+                Icons.schedule,
+                'Thời gian đặt',
+                '${table.reservedAt!.hour}:${table.reservedAt!.minute.toString().padLeft(2, '0')} ${table.reservedAt!.day}/${table.reservedAt!.month}/${table.reservedAt!.year}',
+              ),
+              if (table.reservedBy != null && table.reservedBy!.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                _buildDetailRow(Icons.person, 'Người đặt', table.reservedBy!),
+              ],
+              if (table.reservedPhone != null &&
+                  table.reservedPhone!.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                _buildDetailRow(
+                  Icons.phone,
+                  'Số điện thoại',
+                  table.reservedPhone!,
+                ),
+              ],
+            ],
           ],
         ),
         actions: [
@@ -508,10 +548,7 @@ class _TableManagementPageState extends State<TableManagementPage> {
       children: [
         Icon(icon, color: Colors.grey.shade600),
         const SizedBox(width: 12),
-        Text(
-          '$label:',
-          style: const TextStyle(fontWeight: FontWeight.w600),
-        ),
+        Text('$label:', style: const TextStyle(fontWeight: FontWeight.w600)),
         const SizedBox(width: 8),
         Text(value),
       ],
@@ -536,7 +573,7 @@ class _TableManagementPageState extends State<TableManagementPage> {
       case TableStatus.occupied:
         return Colors.orange;
       case TableStatus.reserved:
-        return Colors.blue;
+        return Colors.red;
     }
   }
 
@@ -603,8 +640,9 @@ class _TableManagementPageState extends State<TableManagementPage> {
                         selectedColor: Colors.blue.shade700,
                         labelStyle: TextStyle(
                           color: isSelected ? Colors.white : Colors.black87,
-                          fontWeight:
-                              isSelected ? FontWeight.bold : FontWeight.normal,
+                          fontWeight: isSelected
+                              ? FontWeight.bold
+                              : FontWeight.normal,
                         ),
                       ),
                     );
@@ -619,8 +657,8 @@ class _TableManagementPageState extends State<TableManagementPage> {
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _filteredTables.isEmpty
-              ? _buildEmptyState()
-              : _buildTableGrid(),
+          ? _buildEmptyState()
+          : _buildTableGrid(),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _showAddEditDialog(),
         backgroundColor: Colors.blue.shade700,
@@ -708,11 +746,7 @@ class _TableManagementPageState extends State<TableManagementPage> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(
-                      Icons.people,
-                      size: 14,
-                      color: Colors.grey.shade600,
-                    ),
+                    Icon(Icons.people, size: 14, color: Colors.grey.shade600),
                     const SizedBox(width: 4),
                     Text(
                       '${table.capacity} chỗ',
@@ -742,6 +776,18 @@ class _TableManagementPageState extends State<TableManagementPage> {
                     ),
                   ),
                 ),
+                if (table.status == TableStatus.reserved &&
+                    table.reservedAt != null) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    '${table.reservedAt!.hour}:${table.reservedAt!.minute.toString().padLeft(2, '0')}',
+                    style: const TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.red,
+                    ),
+                  ),
+                ],
               ],
             ),
             // Menu button
@@ -755,10 +801,7 @@ class _TableManagementPageState extends State<TableManagementPage> {
                     color: Colors.black12,
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: const Icon(
-                    Icons.more_vert,
-                    size: 16,
-                  ),
+                  child: const Icon(Icons.more_vert, size: 16),
                 ),
                 onSelected: (value) {
                   switch (value) {

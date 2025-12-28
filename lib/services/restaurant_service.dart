@@ -38,16 +38,13 @@ class RestaurantService {
   // Get restaurant ID by owner ID
   Future<String?> getRestaurantIdByOwnerId(String ownerId) async {
     try {
-      DatabaseReference ref = _database.ref('restaurants');
-      DataSnapshot snapshot = await ref
-          .orderByChild('ownerId')
-          .equalTo(ownerId)
-          .get();
+      DatabaseReference ref = _database.ref('users/$ownerId');
+      DataSnapshot snapshot = await ref.get();
 
       if (snapshot.exists && snapshot.value != null) {
-        Map<dynamic, dynamic> restaurants =
+        Map<dynamic, dynamic> userData =
             snapshot.value as Map<dynamic, dynamic>;
-        return restaurants.keys.first;
+        return userData['restaurantID'] as String?;
       }
       return null;
     } catch (e) {

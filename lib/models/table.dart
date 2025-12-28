@@ -8,6 +8,9 @@ class TableModel {
   final TableStatus status;
   final DateTime createdAt;
   final DateTime updatedAt;
+  final DateTime? reservedAt;
+  final String? reservedBy;
+  final String? reservedPhone;
 
   TableModel({
     required this.id,
@@ -17,6 +20,9 @@ class TableModel {
     required this.status,
     required this.createdAt,
     required this.updatedAt,
+    this.reservedAt,
+    this.reservedBy,
+    this.reservedPhone,
   });
 
   factory TableModel.fromJson(Map<String, dynamic> json) {
@@ -32,6 +38,11 @@ class TableModel {
       updatedAt: json['updatedAt'] != null
           ? DateTime.parse(json['updatedAt'])
           : DateTime.now(),
+      reservedAt: json['reservedAt'] != null
+          ? DateTime.parse(json['reservedAt'])
+          : null,
+      reservedBy: json['reservedBy'],
+      reservedPhone: json['reservedPhone'],
     );
   }
 
@@ -56,6 +67,9 @@ class TableModel {
       'status': status.toString().split('.').last,
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
+      'reservedAt': reservedAt?.toIso8601String(),
+      'reservedBy': reservedBy,
+      'reservedPhone': reservedPhone,
     };
   }
 
@@ -67,6 +81,9 @@ class TableModel {
     TableStatus? status,
     DateTime? createdAt,
     DateTime? updatedAt,
+    DateTime? reservedAt,
+    String? reservedBy,
+    String? reservedPhone,
   }) {
     return TableModel(
       id: id ?? this.id,
@@ -76,6 +93,9 @@ class TableModel {
       status: status ?? this.status,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      reservedAt: reservedAt ?? this.reservedAt,
+      reservedBy: reservedBy ?? this.reservedBy,
+      reservedPhone: reservedPhone ?? this.reservedPhone,
     );
   }
 }

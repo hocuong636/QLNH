@@ -127,9 +127,9 @@ class _OrderTableManagementPageState extends State<OrderTableManagementPage> {
       case TableStatus.empty:
         return Colors.green;
       case TableStatus.occupied:
-        return Colors.red;
-      case TableStatus.reserved:
         return Colors.orange;
+      case TableStatus.reserved:
+        return Colors.red;
     }
   }
 

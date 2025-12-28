@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:quanlynhahang/services/inventory_service.dart';
 import 'package:quanlynhahang/services/local_storage_service.dart';
 import 'package:quanlynhahang/models/inventory_item.dart';
+import 'package:quanlynhahang/models/inventory_history.dart';
 
 class InventoryManagementPage extends StatefulWidget {
   const InventoryManagementPage({super.key});
@@ -15,7 +16,9 @@ class _InventoryManagementPageState extends State<InventoryManagementPage> {
   final InventoryService _inventoryService = InventoryService();
   final LocalStorageService _localStorageService = LocalStorageService();
   List<InventoryItem> _inventoryItems = [];
+  List<InventoryHistory> _inventoryHistory = [];
   bool _isLoading = true;
+  bool _showHistory = false;
 
   @override
   void initState() {
@@ -35,7 +38,16 @@ class _InventoryManagementPageState extends State<InventoryManagementPage> {
           _inventoryItems = await _inventoryService.getInventoryItems(
             restaurantId,
           );
+          if (_showHistory) {
+            _inventoryHistory = await _inventoryService.getInventoryHistory(
+              restaurantId,
+            );
+          }
+        } else {
+          _showSnackBar('Không tìm thấy nhà hàng. Vui lòng đăng nhập lại.');
         }
+      } else {
+        _showSnackBar('Bạn chưa đăng nhập. Vui lòng đăng nhập lại.');
       }
     } catch (e) {
       _showSnackBar('Lỗi khi tải danh sách kho: $e');
@@ -135,19 +147,36 @@ class _InventoryManagementPageState extends State<InventoryManagementPage> {
                           double.tryParse(minThresholdController.text) ?? 0,
                       supplier: supplierController.text,
                       notes: notesController.text,
+                      isActive: true,
                       lastUpdated: DateTime.now(),
                     );
 
                     if (item == null) {
-                      await _inventoryService.createInventoryItem(newItem);
-                      _showSnackBar('Thêm nguyên liệu thành công');
+                      String? result = await _inventoryService
+                          .createInventoryItem(newItem);
+                      if (result != null) {
+                        _showSnackBar('Thêm nguyên liệu thành công');
+                      } else {
+                        _showSnackBar('Lỗi khi thêm nguyên liệu');
+                        return;
+                      }
                     } else {
-                      await _inventoryService.updateInventoryItem(newItem);
-                      _showSnackBar('Cập nhật nguyên liệu thành công');
+                      bool success = await _inventoryService
+                          .updateInventoryItem(newItem);
+                      if (success) {
+                        _showSnackBar('Cập nhật nguyên liệu thành công');
+                      } else {
+                        _showSnackBar('Lỗi khi cập nhật nguyên liệu');
+                        return;
+                      }
                     }
 
                     Navigator.of(context).pop();
                     _loadInventoryItems();
+                  } else {
+                    _showSnackBar(
+                      'Không tìm thấy nhà hàng. Vui lòng đăng nhập lại.',
+                    );
                   }
                 }
               } catch (e) {
@@ -191,6 +220,44 @@ class _InventoryManagementPageState extends State<InventoryManagementPage> {
     );
   }
 
+  void _showDeactivateDialog(InventoryItem item) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Ngừng sử dụng nguyên liệu'),
+        content: Text(
+          'Bạn có chắc chắn muốn ngừng sử dụng "${item.name}"? Nguyên liệu sẽ bị ẩn khỏi danh sách nhưng vẫn có thể khôi phục.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Hủy'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              try {
+                bool success = await _inventoryService.deactivateInventoryItem(
+                  item.id,
+                );
+                if (success) {
+                  _showSnackBar('Ngừng sử dụng nguyên liệu thành công');
+                  Navigator.of(context).pop();
+                  _loadInventoryItems();
+                } else {
+                  _showSnackBar('Lỗi khi ngừng sử dụng');
+                }
+              } catch (e) {
+                _showSnackBar('Lỗi: $e');
+              }
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
+            child: const Text('Ngừng sử dụng'),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _showUpdateQuantityDialog(InventoryItem item) {
     final quantityController = TextEditingController(
       text: item.quantity.toString(),
@@ -225,27 +292,107 @@ class _InventoryManagementPageState extends State<InventoryManagementPage> {
               }
 
               try {
-                InventoryItem updatedItem = InventoryItem(
-                  id: item.id,
-                  restaurantId: item.restaurantId,
-                  name: item.name,
-                  quantity: double.parse(quantityController.text),
-                  unit: item.unit,
-                  minThreshold: item.minThreshold,
-                  supplier: item.supplier,
-                  notes: item.notes,
-                  lastUpdated: DateTime.now(),
+                double newQuantity = double.parse(quantityController.text);
+                String action = newQuantity > item.quantity
+                    ? 'add'
+                    : 'subtract';
+                String notes = 'Cập nhật thủ công';
+
+                bool success = await _inventoryService.updateInventoryQuantity(
+                  item.id,
+                  newQuantity,
+                  action,
+                  notes,
                 );
 
-                await _inventoryService.updateInventoryItem(updatedItem);
-                _showSnackBar('Cập nhật số lượng thành công');
-                Navigator.of(context).pop();
-                _loadInventoryItems();
+                if (success) {
+                  _showSnackBar('Cập nhật số lượng thành công');
+                  Navigator.of(context).pop();
+                  _loadInventoryItems();
+                } else {
+                  _showSnackBar('Lỗi khi cập nhật');
+                }
               } catch (e) {
                 _showSnackBar('Lỗi khi cập nhật: $e');
               }
             },
             child: const Text('Cập nhật'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showSubtractQuantityDialog(InventoryItem item) {
+    final quantityController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Xuất kho - ${item.name}'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('Số lượng hiện tại: ${item.quantity} ${item.unit}'),
+            const SizedBox(height: 16),
+            TextField(
+              controller: quantityController,
+              decoration: InputDecoration(
+                labelText: 'Số lượng xuất (${item.unit})',
+              ),
+              keyboardType: TextInputType.number,
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Lưu ý: Xuất kho sẽ giảm số lượng trong kho',
+              style: TextStyle(fontSize: 12, color: Colors.red),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Hủy'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              if (quantityController.text.isEmpty) {
+                _showSnackBar('Vui lòng nhập số lượng xuất');
+                return;
+              }
+
+              try {
+                double subtractQuantity = double.parse(quantityController.text);
+                if (subtractQuantity <= 0) {
+                  _showSnackBar('Số lượng phải lớn hơn 0');
+                  return;
+                }
+                if (subtractQuantity > item.quantity) {
+                  _showSnackBar('Không đủ số lượng trong kho');
+                  return;
+                }
+
+                double newQuantity = item.quantity - subtractQuantity;
+                bool success = await _inventoryService.updateInventoryQuantity(
+                  item.id,
+                  newQuantity,
+                  'subtract',
+                  'Xuất kho thủ công',
+                );
+
+                if (success) {
+                  _showSnackBar('Xuất kho thành công');
+                  Navigator.of(context).pop();
+                  _loadInventoryItems();
+                } else {
+                  _showSnackBar('Lỗi khi xuất kho');
+                }
+              } catch (e) {
+                _showSnackBar('Lỗi: $e');
+              }
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
+            child: const Text('Xuất kho'),
           ),
         ],
       ),
@@ -280,17 +427,33 @@ class _InventoryManagementPageState extends State<InventoryManagementPage> {
         backgroundColor: Colors.white,
         foregroundColor: Colors.black87,
         elevation: 0,
+        actions: [
+          TextButton(
+            onPressed: () {
+              setState(() => _showHistory = !_showHistory);
+              _loadInventoryItems();
+            },
+            child: Text(
+              _showHistory ? 'Xem kho' : 'Xem lịch sử',
+              style: const TextStyle(color: Colors.blue),
+            ),
+          ),
+        ],
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
+          : _showHistory
+          ? _buildHistoryView()
           : _inventoryItems.isEmpty
           ? _buildEmptyState()
           : _buildInventoryList(),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _showAddEditDialog(),
-        backgroundColor: Colors.blue.shade700,
-        child: const Icon(Icons.add),
-      ),
+      floatingActionButton: !_showHistory
+          ? FloatingActionButton(
+              onPressed: () => _showAddEditDialog(),
+              backgroundColor: Colors.blue.shade700,
+              child: const Icon(Icons.add),
+            )
+          : null,
     );
   }
 
@@ -412,8 +575,14 @@ class _InventoryManagementPageState extends State<InventoryManagementPage> {
                   case 'update_quantity':
                     _showUpdateQuantityDialog(item);
                     break;
+                  case 'subtract_quantity':
+                    _showSubtractQuantityDialog(item);
+                    break;
                   case 'edit':
                     _showAddEditDialog(item);
+                    break;
+                  case 'deactivate':
+                    _showDeactivateDialog(item);
                     break;
                   case 'delete':
                     _showDeleteDialog(item);
@@ -432,12 +601,32 @@ class _InventoryManagementPageState extends State<InventoryManagementPage> {
                   ),
                 ),
                 const PopupMenuItem(
+                  value: 'subtract_quantity',
+                  child: Row(
+                    children: [
+                      Icon(Icons.remove_circle, size: 20),
+                      SizedBox(width: 8),
+                      Text('Xuất kho'),
+                    ],
+                  ),
+                ),
+                const PopupMenuItem(
                   value: 'edit',
                   child: Row(
                     children: [
                       Icon(Icons.edit, size: 20),
                       SizedBox(width: 8),
                       Text('Sửa thông tin'),
+                    ],
+                  ),
+                ),
+                const PopupMenuItem(
+                  value: 'deactivate',
+                  child: Row(
+                    children: [
+                      Icon(Icons.pause, size: 20),
+                      SizedBox(width: 8),
+                      Text('Ngừng sử dụng'),
                     ],
                   ),
                 ),
@@ -451,6 +640,66 @@ class _InventoryManagementPageState extends State<InventoryManagementPage> {
                     ],
                   ),
                 ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildHistoryView() {
+    if (_inventoryHistory.isEmpty) {
+      return const Center(
+        child: Text(
+          'Chưa có lịch sử nào',
+          style: TextStyle(fontSize: 16, color: Colors.grey),
+        ),
+      );
+    }
+
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: _inventoryHistory.length,
+      itemBuilder: (context, index) {
+        final history = _inventoryHistory[index];
+        return Card(
+          margin: const EdgeInsets.only(bottom: 8),
+          child: ListTile(
+            leading: Icon(
+              history.action == 'add'
+                  ? Icons.add_circle
+                  : history.action == 'subtract'
+                  ? Icons.remove_circle
+                  : Icons.edit,
+              color: history.action == 'add'
+                  ? Colors.green
+                  : history.action == 'subtract'
+                  ? Colors.red
+                  : Colors.blue,
+            ),
+            title: Text(
+              history.action == 'add'
+                  ? 'Nhập kho'
+                  : history.action == 'subtract'
+                  ? 'Xuất kho'
+                  : 'Cập nhật',
+            ),
+            subtitle: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Số lượng: ${history.quantityChange > 0 ? '+' : ''}${history.quantityChange} → ${history.newQuantity}',
+                ),
+                Text(
+                  history.timestamp.toString().substring(0, 19),
+                  style: const TextStyle(fontSize: 12, color: Colors.grey),
+                ),
+                if (history.notes.isNotEmpty)
+                  Text(
+                    history.notes,
+                    style: const TextStyle(fontSize: 12, color: Colors.grey),
+                  ),
               ],
             ),
           ),
