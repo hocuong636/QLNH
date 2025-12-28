@@ -114,7 +114,7 @@ class _StaffManagementPageState extends State<StaffManagementPage> {
     }
   }
 
-  Future<void> _addStaffToRestaurant(String userId) async {
+  Future<void> _addStaffToRestaurant(String userId, String role) async {
     try {
       final database = FirebaseDatabase.instanceFor(
         app: FirebaseAuth.instance.app,
@@ -124,6 +124,7 @@ class _StaffManagementPageState extends State<StaffManagementPage> {
 
       await database.ref('users/$userId').update({
         'restaurantID': _myRestaurantId,
+        'role': role,
         'updatedAt': DateTime.now().toIso8601String(),
       });
 
@@ -131,7 +132,7 @@ class _StaffManagementPageState extends State<StaffManagementPage> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Đã thêm nhân viên thành công')),
+          SnackBar(content: Text('Đã thêm nhân viên với vai trò ${UserRole.getDisplayName(role)}')),
         );
       }
     } catch (e) {
@@ -141,6 +142,53 @@ class _StaffManagementPageState extends State<StaffManagementPage> {
           SnackBar(content: Text('Lỗi thêm nhân viên: $e')),
         );
       }
+    }
+  }
+
+  Future<void> _showRoleSelectionDialog(String userId, String userName) async {
+    final selectedRole = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Chọn vai trò cho nhân viên'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Nhân viên: $userName'),
+            const SizedBox(height: 16),
+            const Text('Chọn vai trò:'),
+            const SizedBox(height: 8),
+            ListTile(
+              leading: CircleAvatar(
+                backgroundColor: Colors.blue.shade100,
+                child: const Icon(Icons.shopping_cart, color: Colors.blue),
+              ),
+              title: Text(UserRole.getDisplayName(UserRole.order)),
+              subtitle: const Text('Quản lý đơn hàng, phục vụ khách'),
+              onTap: () => Navigator.of(context).pop(UserRole.order),
+            ),
+            ListTile(
+              leading: CircleAvatar(
+                backgroundColor: Colors.orange.shade100,
+                child: const Icon(Icons.restaurant, color: Colors.orange),
+              ),
+              title: Text(UserRole.getDisplayName(UserRole.kitchen)),
+              subtitle: const Text('Quản lý bếp, chế biến món ăn'),
+              onTap: () => Navigator.of(context).pop(UserRole.kitchen),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Hủy'),
+          ),
+        ],
+      ),
+    );
+
+    if (selectedRole != null) {
+      await _addStaffToRestaurant(userId, selectedRole);
     }
   }
 
@@ -270,8 +318,11 @@ class _StaffManagementPageState extends State<StaffManagementPage> {
                         ),
                         trailing: ElevatedButton.icon(
                           onPressed: () {
-                            _addStaffToRestaurant(user['id']);
                             Navigator.of(context).pop();
+                            _showRoleSelectionDialog(
+                              user['id'],
+                              user['fullName'] ?? user['name'] ?? 'Không có tên',
+                            );
                           },
                           icon: const Icon(Icons.add, size: 16),
                           label: const Text('Thêm'),
