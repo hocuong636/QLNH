@@ -50,7 +50,19 @@ class _MenuManagementPageState extends State<MenuManagementPage> {
   Future<void> _loadMenuItems() async {
     setState(() => _isLoading = true);
     try {
-      _menuItems = await _menuService.getMenuItems();
+      // Lấy restaurantId từ local storage
+      String? restaurantId = _localStorageService.getRestaurantId();
+      
+      // Nếu không có restaurantId trong local storage, lấy từ userId
+      if (restaurantId == null || restaurantId.isEmpty) {
+        String? userId = _localStorageService.getUserId();
+        if (userId != null) {
+          restaurantId = await _menuService.getRestaurantIdByOwnerId(userId);
+        }
+      }
+      
+      // Chỉ load menu items của nhà hàng này
+      _menuItems = await _menuService.getMenuItems(restaurantId);
       _filterMenuItems();
     } catch (e) {
       _showSnackBar('Lỗi khi tải danh sách món ăn: $e');

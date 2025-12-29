@@ -28,6 +28,16 @@ class _OrderMenuPageState extends State<OrderMenuPage> {
     setState(() => _isLoading = true);
     try {
       String? restaurantId = _localStorageService.getRestaurantId();
+      
+      // Nếu không có restaurantId trong local storage, lấy từ userId
+      if (restaurantId == null || restaurantId.isEmpty) {
+        String? userId = _localStorageService.getUserId();
+        if (userId != null) {
+          restaurantId = await _menuService.getRestaurantIdByOwnerId(userId);
+        }
+      }
+      
+      // Chỉ load menu items của nhà hàng này
       _menuItems = await _menuService.getMenuItems(restaurantId);
     } catch (e) {
       _showSnackBar('Lỗi khi tải thực đơn: $e');
@@ -75,7 +85,7 @@ class _OrderMenuPageState extends State<OrderMenuPage> {
                 // Category filter
                 Container(
                   height: 50,
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   child: ListView(
                     scrollDirection: Axis.horizontal,
                     children: _getCategories().map((category) {
@@ -87,6 +97,17 @@ class _OrderMenuPageState extends State<OrderMenuPage> {
                           onSelected: (selected) {
                             setState(() => _selectedCategory = category);
                           },
+                          backgroundColor: Colors.grey.shade100,
+                          selectedColor: Colors.blue.shade100,
+                          checkmarkColor: Colors.blue,
+                          labelStyle: TextStyle(
+                            color: _selectedCategory == category
+                                ? Colors.blue.shade700
+                                : Colors.grey.shade700,
+                            fontWeight: _selectedCategory == category
+                                ? FontWeight.w600
+                                : FontWeight.normal,
+                          ),
                         ),
                       );
                     }).toList(),
@@ -108,6 +129,10 @@ class _OrderMenuPageState extends State<OrderMenuPage> {
                             final item = _getFilteredItems()[index];
                             return Card(
                               margin: const EdgeInsets.only(bottom: 12),
+                              elevation: 2,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
                               child: Padding(
                                 padding: const EdgeInsets.all(12),
                                 child: Row(

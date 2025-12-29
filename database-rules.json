@@ -34,6 +34,7 @@
     "menu": {
       ".read": "auth != null",
       ".write": "auth != null",
+      ".indexOn": "restaurantId",
       "$menuId": {
         ".read": "auth != null && (auth.uid == 'admin' || data.child('restaurantID').val() == root.child('users').child(auth.uid).child('restaurantID').val())",
         ".write": "auth != null && (auth.uid == 'admin' || (data.exists() ? data.child('restaurantID').val() == root.child('users').child(auth.uid).child('restaurantID').val() : true) && newData.child('restaurantID').val() == root.child('users').child(auth.uid).child('restaurantID').val())"

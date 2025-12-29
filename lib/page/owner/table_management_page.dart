@@ -21,7 +21,7 @@ class _TableManagementPageState extends State<TableManagementPage> {
   final List<String> _statusOptions = [
     'Tất cả',
     'Trống',
-    'Đang phục vụ',
+    'Phục vụ',
     'Đã đặt',
   ];
 
@@ -560,7 +560,7 @@ class _TableManagementPageState extends State<TableManagementPage> {
       case TableStatus.empty:
         return 'Trống';
       case TableStatus.occupied:
-        return 'Đang phục vụ';
+        return 'Phục vụ';
       case TableStatus.reserved:
         return 'Đã đặt';
     }
@@ -698,7 +698,7 @@ class _TableManagementPageState extends State<TableManagementPage> {
       padding: const EdgeInsets.all(16),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 3,
-        childAspectRatio: 1.0,
+        childAspectRatio: 0.75,
         crossAxisSpacing: 12,
         mainAxisSpacing: 12,
       ),

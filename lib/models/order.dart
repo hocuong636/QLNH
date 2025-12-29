@@ -1,14 +1,21 @@
 enum OrderStatus { new_, cooking, done, paid }
 
 class OrderItem {
+  final String menuItemId;  // ID của món ăn trong menu
   final String name;
   final int quantity;
   final double price;
 
-  OrderItem({required this.name, required this.quantity, required this.price});
+  OrderItem({
+    required this.menuItemId,
+    required this.name,
+    required this.quantity,
+    required this.price,
+  });
 
   factory OrderItem.fromJson(Map<String, dynamic> json) {
     return OrderItem(
+      menuItemId: json['menuItemId'] ?? '',
       name: json['name'] ?? '',
       quantity: json['quantity'] ?? 0,
       price: (json['price'] ?? 0).toDouble(),
@@ -16,7 +23,12 @@ class OrderItem {
   }
 
   Map<String, dynamic> toJson() {
-    return {'name': name, 'quantity': quantity, 'price': price};
+    return {
+      'menuItemId': menuItemId,
+      'name': name,
+      'quantity': quantity,
+      'price': price,
+    };
   }
 }
 
@@ -64,7 +76,7 @@ class Order {
               });
               return OrderItem.fromJson(itemMap);
             }
-            return OrderItem(name: '', quantity: 0, price: 0);
+            return OrderItem(name: '', quantity: 0, price: 0, menuItemId: '');
           }).toList() ??
           [],
       totalAmount: (json['totalAmount'] ?? 0).toDouble(),

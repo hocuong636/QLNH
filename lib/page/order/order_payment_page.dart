@@ -68,7 +68,16 @@ class _OrderPaymentPageState extends State<OrderPaymentPage> {
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setState) => AlertDialog(
-          title: Text('Thanh toán đơn #${order.id.substring(0, 8)}'),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: Text(
+            'Thanh toán đơn #${order.id.substring(0, 8)}',
+            style: const TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -76,36 +85,53 @@ class _OrderPaymentPageState extends State<OrderPaymentPage> {
               children: [
                 const Text(
                   'Chi tiết đơn hàng:',
-                  style: TextStyle(fontWeight: FontWeight.w600),
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 15,
+                  ),
                 ),
                 const SizedBox(height: 8),
                 ...order.items.map(
                   (item) => Padding(
-                    padding: const EdgeInsets.only(bottom: 4),
+                    padding: const EdgeInsets.only(bottom: 6),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Expanded(child: Text('${item.name} x${item.quantity}')),
+                        Expanded(
+                          child: Text(
+                            '${item.name} x${item.quantity}',
+                            style: TextStyle(
+                              color: Colors.grey.shade700,
+                            ),
+                          ),
+                        ),
                         Text(
-                          '${(item.price * item.quantity).toStringAsFixed(0)} VND',
+                          '${(item.price * item.quantity).toStringAsFixed(0)} đ',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
                       ],
                     ),
                   ),
                 ),
-                const Divider(),
+                const Divider(height: 20),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     const Text(
                       'Tổng cộng:',
-                      style: TextStyle(fontWeight: FontWeight.w600),
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
                     ),
                     Text(
-                      '${order.totalAmount.toStringAsFixed(0)} VND',
+                      '${order.totalAmount.toStringAsFixed(0)} đ',
                       style: const TextStyle(
-                        fontWeight: FontWeight.w600,
-                        color: Colors.green,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 18,
+                        color: Colors.orange,
                       ),
                     ),
                   ],
@@ -113,20 +139,48 @@ class _OrderPaymentPageState extends State<OrderPaymentPage> {
                 const SizedBox(height: 16),
                 const Text(
                   'Phương thức thanh toán:',
-                  style: TextStyle(fontWeight: FontWeight.w600),
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 15,
+                  ),
                 ),
                 const SizedBox(height: 8),
-                RadioListTile<String>(
-                  title: const Text('Tiền mặt'),
-                  value: 'cash',
-                  groupValue: paymentMethod,
-                  onChanged: (value) => setState(() => paymentMethod = value!),
-                ),
-                RadioListTile<String>(
-                  title: const Text('Chuyển khoản'),
-                  value: 'transfer',
-                  groupValue: paymentMethod,
-                  onChanged: (value) => setState(() => paymentMethod = value!),
+                Container(
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.grey.shade300),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Column(
+                    children: [
+                      RadioListTile<String>(
+                        title: Row(
+                          children: [
+                            Icon(Icons.money, color: Colors.green.shade700, size: 20),
+                            const SizedBox(width: 8),
+                            const Text('Tiền mặt'),
+                          ],
+                        ),
+                        value: 'cash',
+                        groupValue: paymentMethod,
+                        onChanged: (value) => setState(() => paymentMethod = value!),
+                        activeColor: Colors.green,
+                      ),
+                      Divider(height: 1, color: Colors.grey.shade300),
+                      RadioListTile<String>(
+                        title: Row(
+                          children: [
+                            Icon(Icons.account_balance, color: Colors.blue.shade700, size: 20),
+                            const SizedBox(width: 8),
+                            const Text('Chuyển khoản'),
+                          ],
+                        ),
+                        value: 'transfer',
+                        groupValue: paymentMethod,
+                        onChanged: (value) => setState(() => paymentMethod = value!),
+                        activeColor: Colors.blue,
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -134,11 +188,25 @@ class _OrderPaymentPageState extends State<OrderPaymentPage> {
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
+              style: TextButton.styleFrom(
+                foregroundColor: Colors.grey.shade700,
+              ),
               child: const Text('Hủy'),
             ),
             ElevatedButton(
               onPressed: () => _processPayment(order, paymentMethod),
-              child: const Text('Xác nhận thanh toán'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.green,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: const Text(
+                'Xác nhận',
+                style: TextStyle(fontWeight: FontWeight.w600),
+              ),
             ),
           ],
         ),
@@ -247,6 +315,7 @@ class _OrderPaymentPageState extends State<OrderPaymentPage> {
         final order = _orders[index];
         return Card(
           margin: const EdgeInsets.only(bottom: 12),
+          elevation: 2,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
@@ -261,65 +330,97 @@ class _OrderPaymentPageState extends State<OrderPaymentPage> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        '#${order.id.substring(0, 8)}',
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w600,
-                          fontSize: 16,
-                        ),
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: Colors.orange.shade50,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Icon(
+                              Icons.receipt_long,
+                              color: Colors.orange.shade700,
+                              size: 20,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Text(
+                            '#${order.id.substring(0, 8)}',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
+                        ],
                       ),
                       Container(
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
+                          horizontal: 10,
+                          vertical: 5,
                         ),
                         decoration: BoxDecoration(
-                          color: Colors.green.withOpacity(0.1),
+                          color: Colors.green.shade50,
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: const Text(
-                          'Sẵn sàng thanh toán',
+                          'Sẵn sàng',
                           style: TextStyle(
                             color: Colors.green,
                             fontSize: 12,
-                            fontWeight: FontWeight.w500,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    order.customerName,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
+                  const Divider(height: 20),
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
+                      Icon(Icons.person_outline, size: 16, color: Colors.grey.shade600),
+                      const SizedBox(width: 6),
                       Text(
-                        'Bàn ${order.tableId}',
-                        style: TextStyle(
-                          color: Colors.grey.shade600,
-                          fontSize: 14,
-                        ),
-                      ),
-                      Text(
-                        '${order.totalAmount.toStringAsFixed(0)} VND',
+                        order.customerName,
                         style: const TextStyle(
-                          fontWeight: FontWeight.w600,
-                          color: Colors.green,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    _formatDateTime(order.createdAt),
-                    style: TextStyle(color: Colors.grey.shade500, fontSize: 12),
+                  const SizedBox(height: 6),
+                  Row(
+                    children: [
+                      Icon(Icons.table_restaurant, size: 16, color: Colors.grey.shade600),
+                      const SizedBox(width: 6),
+                      Text(
+                        'Bàn ${order.tableId}',
+                        style: TextStyle(
+                          color: Colors.grey.shade700,
+                          fontSize: 14,
+                        ),
+                      ),
+                      const Spacer(),
+                      Text(
+                        '${order.totalAmount.toStringAsFixed(0)} đ',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 18,
+                          color: Colors.orange,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  Row(
+                    children: [
+                      Icon(Icons.access_time, size: 16, color: Colors.grey.shade600),
+                      const SizedBox(width: 6),
+                      Text(
+                        _formatDateTime(order.createdAt),
+                        style: TextStyle(color: Colors.grey.shade500, fontSize: 12),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 8),
                   Text(

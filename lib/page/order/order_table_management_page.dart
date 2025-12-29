@@ -82,39 +82,133 @@ class _OrderTableManagementPageState extends State<OrderTableManagementPage> {
   void _showTableActions(TableModel table) {
     showModalBottomSheet(
       context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
       builder: (context) => Container(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(20),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(
-              'Bàn ${table.number}',
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey.shade300,
+                borderRadius: BorderRadius.circular(2),
+              ),
             ),
             const SizedBox(height: 16),
-            if (table.status == TableStatus.empty)
+            Text(
+              'Bàn ${table.number}',
+              style: const TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: _getStatusColor(table.status).withOpacity(0.15),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                _getStatusText(table.status),
+                style: TextStyle(
+                  color: _getStatusColor(table.status),
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+            if (table.status == TableStatus.empty) ...[
               ListTile(
-                leading: const Icon(Icons.play_arrow, color: Colors.green),
-                title: const Text('Mở bàn'),
+                leading: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.green.shade50,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.play_arrow, color: Colors.green),
+                ),
+                title: const Text('Mở bàn', style: TextStyle(fontWeight: FontWeight.w600)),
                 onTap: () {
                   Navigator.pop(context);
                   _updateTableStatus(table, TableStatus.occupied);
                 },
               ),
+              ListTile(
+                leading: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.red.shade50,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.book_online, color: Colors.red),
+                ),
+                title: const Text('Đặt trước', style: TextStyle(fontWeight: FontWeight.w600)),
+                onTap: () {
+                  Navigator.pop(context);
+                  _updateTableStatus(table, TableStatus.reserved);
+                },
+              ),
+            ],
             if (table.status == TableStatus.occupied)
               ListTile(
-                leading: const Icon(Icons.stop, color: Colors.red),
-                title: const Text('Kết thúc bàn'),
+                leading: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.orange.shade50,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.stop, color: Colors.orange),
+                ),
+                title: const Text('Kết thúc bàn', style: TextStyle(fontWeight: FontWeight.w600)),
                 onTap: () {
                   Navigator.pop(context);
                   _updateTableStatus(table, TableStatus.empty);
                 },
               ),
-            const SizedBox(height: 8),
-            ListTile(
-              leading: const Icon(Icons.close),
-              title: const Text('Hủy'),
-              onTap: () => Navigator.pop(context),
+            if (table.status == TableStatus.reserved) ...[
+              ListTile(
+                leading: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.green.shade50,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.play_arrow, color: Colors.green),
+                ),
+                title: const Text('Bắt đầu phục vụ', style: TextStyle(fontWeight: FontWeight.w600)),
+                onTap: () {
+                  Navigator.pop(context);
+                  _updateTableStatus(table, TableStatus.occupied);
+                },
+              ),
+              ListTile(
+                leading: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade100,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(Icons.cancel, color: Colors.grey.shade700),
+                ),
+                title: const Text('Hủy đặt bàn', style: TextStyle(fontWeight: FontWeight.w600)),
+                onTap: () {
+                  Navigator.pop(context);
+                  _updateTableStatus(table, TableStatus.empty);
+                },
+              ),
+            ],
+            const SizedBox(height: 12),
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              style: TextButton.styleFrom(
+                minimumSize: const Size(double.infinity, 48),
+              ),
+              child: const Text('Đóng'),
             ),
           ],
         ),
@@ -138,7 +232,7 @@ class _OrderTableManagementPageState extends State<OrderTableManagementPage> {
       case TableStatus.empty:
         return 'Trống';
       case TableStatus.occupied:
-        return 'Đang phục vụ';
+        return 'Phục vụ';
       case TableStatus.reserved:
         return 'Đã đặt';
     }
@@ -182,7 +276,7 @@ class _OrderTableManagementPageState extends State<OrderTableManagementPage> {
       padding: const EdgeInsets.all(16),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 3,
-        childAspectRatio: 1,
+        childAspectRatio: 0.75,
         crossAxisSpacing: 12,
         mainAxisSpacing: 12,
       ),
@@ -198,40 +292,58 @@ class _OrderTableManagementPageState extends State<OrderTableManagementPage> {
             onTap: () => _showTableActions(table),
             borderRadius: BorderRadius.circular(12),
             child: Container(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(12),
                 color: Colors.white,
+                border: Border.all(
+                  color: _getStatusColor(table.status).withOpacity(0.3),
+                  width: 2,
+                ),
               ),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(
-                    Icons.table_restaurant,
-                    size: 32,
-                    color: _getStatusColor(table.status),
+                  Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: _getStatusColor(table.status).withOpacity(0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      Icons.table_restaurant,
+                      size: 24,
+                      color: _getStatusColor(table.status),
+                    ),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 6),
                   Text(
                     'Bàn ${table.number}',
                     style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    _getStatusText(table.status),
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: _getStatusColor(table.status),
-                      fontWeight: FontWeight.w500,
+                  const SizedBox(height: 3),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: _getStatusColor(table.status).withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      _getStatusText(table.status),
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: _getStatusColor(table.status),
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     '${table.capacity} người',
-                    style: TextStyle(fontSize: 10, color: Colors.grey.shade600),
+                    style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
                   ),
                 ],
               ),

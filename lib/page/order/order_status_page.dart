@@ -170,6 +170,10 @@ class _OrderStatusPageState extends State<OrderStatusPage> {
                   final order = _orders[index];
                   return Card(
                     margin: const EdgeInsets.only(bottom: 16),
+                    elevation: 2,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                     child: Padding(
                       padding: const EdgeInsets.all(16),
                       child: Column(
@@ -198,11 +202,7 @@ class _OrderStatusPageState extends State<OrderStatusPage> {
                                       OrderStatusConfig.getStatusBackgroundColor(
                                         order.status,
                                       ),
-                                  borderRadius: BorderRadius.circular(20),
-                                  border: Border.all(
-                                    color: _getStatusColor(order.status),
-                                    width: 1,
-                                  ),
+                                  borderRadius: BorderRadius.circular(16),
                                 ),
                                 child: Row(
                                   mainAxisSize: MainAxisSize.min,
@@ -219,7 +219,8 @@ class _OrderStatusPageState extends State<OrderStatusPage> {
                                       _getStatusText(order.status),
                                       style: TextStyle(
                                         color: _getStatusColor(order.status),
-                                        fontWeight: FontWeight.w500,
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 13,
                                       ),
                                     ),
                                   ],
@@ -230,17 +231,25 @@ class _OrderStatusPageState extends State<OrderStatusPage> {
                           const SizedBox(height: 8),
                           Text(
                             'Bàn: ${order.tableId}',
-                            style: const TextStyle(fontSize: 16),
+                            style: TextStyle(
+                              fontSize: 15,
+                              color: Colors.grey.shade700,
+                            ),
                           ),
                           Text(
                             'Khách: ${order.customerName}',
-                            style: const TextStyle(fontSize: 16),
+                            style: TextStyle(
+                              fontSize: 15,
+                              color: Colors.grey.shade700,
+                            ),
                           ),
+                          const SizedBox(height: 4),
                           Text(
-                            'Tổng tiền: ${order.totalAmount.toStringAsFixed(0)} VND',
+                            'Tổng tiền: ${order.totalAmount.toStringAsFixed(0)} đ',
                             style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w500,
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.orange,
                             ),
                           ),
                           const SizedBox(height: 12),

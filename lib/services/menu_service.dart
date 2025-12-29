@@ -9,24 +9,46 @@ class MenuService {
   Future<List<MenuItem>> getMenuItems([String? restaurantId]) async {
     try {
       DatabaseReference ref = _database.ref('menu');
-      DataSnapshot snapshot = await ref.get();
+      DataSnapshot snapshot;
+      
+      // Nếu có restaurantId, chỉ lấy menu của nhà hàng đó
+      if (restaurantId != null && restaurantId.isNotEmpty) {
+        snapshot = await ref
+            .orderByChild('restaurantId')  // Sử dụng 'restaurantId' như trong Firebase
+            .equalTo(restaurantId)
+            .get();
+      } else {
+        // Không có restaurantId thì lấy tất cả (dùng cho admin)
+        snapshot = await ref.get();
+      }
 
       List<MenuItem> menuItems = [];
       if (snapshot.exists && snapshot.value != null) {
-        Map<dynamic, dynamic> items = snapshot.value as Map<dynamic, dynamic>;
-        items.forEach((key, value) {
-          if (value is Map) {
-            // Cast to Map<dynamic, dynamic> first
-            Map<dynamic, dynamic> rawMap = value as Map<dynamic, dynamic>;
-            // Convert to Map<String, dynamic>
-            Map<String, dynamic> itemData = {};
-            rawMap.forEach((k, v) {
-              itemData[k.toString()] = v;
-            });
-            itemData['id'] = key.toString();
-            menuItems.add(MenuItem.fromJson(itemData));
-          }
-        });
+        final value = snapshot.value;
+        
+        // Kiểm tra kiểu dữ liệu trả về
+        if (value is Map) {
+          Map<dynamic, dynamic> items = value as Map<dynamic, dynamic>;
+          items.forEach((key, itemValue) {
+            if (itemValue is Map) {
+              try {
+                // Cast to Map<dynamic, dynamic> first
+                Map<dynamic, dynamic> rawMap = itemValue as Map<dynamic, dynamic>;
+                // Convert to Map<String, dynamic>
+                Map<String, dynamic> itemData = {};
+                rawMap.forEach((k, v) {
+                  itemData[k.toString()] = v;
+                });
+                itemData['id'] = key.toString();
+                menuItems.add(MenuItem.fromJson(itemData));
+              } catch (e) {
+                print('Error parsing menu item $key: $e');
+              }
+            }
+          });
+        } else {
+          print('Unexpected data type from Firebase: ${value.runtimeType}');
+        }
       }
       return menuItems;
     } catch (e) {

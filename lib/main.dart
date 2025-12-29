@@ -10,7 +10,7 @@ import 'page/owner/owner_page.dart';
 import 'page/kitchen/kitchen_page.dart';
 import 'page/order/order_page.dart';
 import 'page/order/order_table_management_page.dart';
-import 'page/order/order_create_page.dart';
+import 'page/order/order_table_selection_page.dart';
 import 'page/order/order_status_page.dart';
 import 'page/order/order_menu_page.dart';
 import 'page/order/order_payment_page.dart';
@@ -56,7 +56,7 @@ class MyApp extends StatelessWidget {
         '/order': (context) => const OrderPage(),
         '/order/table_management': (context) =>
             const OrderTableManagementPage(),
-        '/order/create_order': (context) => const OrderCreatePage(),
+        '/order/create_order': (context) => const OrderTableSelectionPage(),
         '/order/order_status': (context) => const OrderStatusPage(),
         '/order/menu': (context) => const OrderMenuPage(),
         '/order/payment': (context) => const OrderPaymentPage(),
