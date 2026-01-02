@@ -109,6 +109,16 @@
         ".read": "auth != null && (auth.uid == 'admin' || root.child('users').child(auth.uid).child('role').val() == 'admin' || data.child('userId').val() == auth.uid || (root.child('users').child(auth.uid).child('role').val() == 'OWNER' && data.child('ownerId').val() == auth.uid))",
         ".write": "auth != null && (auth.uid == 'admin' || root.child('users').child(auth.uid).child('role').val() == 'admin' || data.child('userId').val() == auth.uid || (root.child('users').child(auth.uid).child('role').val() == 'OWNER' && data.child('ownerId').val() == auth.uid))"
       }
+    },
+    
+    // Pending payments - track pending MoMo payments for auto-update
+    "pending_payments": {
+      ".read": "auth != null",
+      ".write": "auth != null",
+      "$restaurantId": {
+        ".read": "auth != null && $restaurantId == root.child('users').child(auth.uid).child('restaurantID').val()",
+        ".write": "auth != null && $restaurantId == root.child('users').child(auth.uid).child('restaurantID').val()"
+      }
     }
   }
 }

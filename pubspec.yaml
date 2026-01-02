@@ -45,6 +45,9 @@ dependencies:
   image_picker: ^1.0.7
   cached_network_image: ^3.3.1
   cloudinary_public: ^0.23.1
+  crypto: ^3.0.3
+  url_launcher: ^6.2.1
+  qr_flutter: ^4.1.0
 
 dev_dependencies:
   flutter_test:

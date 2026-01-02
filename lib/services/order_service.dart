@@ -144,4 +144,82 @@ class OrderService {
       return null;
     }
   }
+
+  // Get active order for a specific table (not paid)
+  Future<Order?> getActiveOrderByTable(String restaurantId, String tableId) async {
+    try {
+      DatabaseReference ref = _database.ref('orders');
+      DataSnapshot snapshot = await ref.get();
+
+      if (snapshot.exists && snapshot.value != null) {
+        Map<dynamic, dynamic> orderData = snapshot.value as Map<dynamic, dynamic>;
+        
+        for (var entry in orderData.entries) {
+          if (entry.value is Map) {
+            Map<dynamic, dynamic> rawMap = entry.value as Map<dynamic, dynamic>;
+            Map<String, dynamic> orderMap = {};
+            rawMap.forEach((k, v) {
+              orderMap[k.toString()] = v;
+            });
+            orderMap['id'] = entry.key.toString();
+            
+            try {
+              Order order = Order.fromJson(orderMap);
+              // Check if this order belongs to the table and is not paid
+              if (order.restaurantId == restaurantId && 
+                  order.tableId == tableId && 
+                  order.status != OrderStatus.paid) {
+                return order;
+              }
+            } catch (e) {
+              print('Error parsing order: $e');
+            }
+          }
+        }
+      }
+      return null;
+    } catch (e) {
+      print('Error getting active order by table: $e');
+      return null;
+    }
+  }
+
+  // Get orders by table ID
+  Future<List<Order>> getOrdersByTable(String restaurantId, String tableId) async {
+    try {
+      DatabaseReference ref = _database.ref('orders');
+      DataSnapshot snapshot = await ref.get();
+
+      List<Order> orders = [];
+      if (snapshot.exists && snapshot.value != null) {
+        Map<dynamic, dynamic> orderData = snapshot.value as Map<dynamic, dynamic>;
+        
+        orderData.forEach((key, value) {
+          if (value is Map) {
+            Map<dynamic, dynamic> rawMap = value as Map<dynamic, dynamic>;
+            Map<String, dynamic> orderMap = {};
+            rawMap.forEach((k, v) {
+              orderMap[k.toString()] = v;
+            });
+            orderMap['id'] = key.toString();
+            
+            try {
+              Order order = Order.fromJson(orderMap);
+              if (order.restaurantId == restaurantId && order.tableId == tableId) {
+                orders.add(order);
+              }
+            } catch (e) {
+              print('Error parsing order: $e');
+            }
+          }
+        });
+      }
+      
+      orders.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+      return orders;
+    } catch (e) {
+      print('Error getting orders by table: $e');
+      return [];
+    }
+  }
 }
