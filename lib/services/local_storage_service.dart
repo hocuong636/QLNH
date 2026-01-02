@@ -11,6 +11,8 @@ class LocalStorageService {
   static const String _isLoggedInKey = 'is_logged_in';
   static const String _userPhoneKey = 'user_phone';
   static const String _restaurantIdKey = 'restaurant_id';
+  static const String _rememberMeEmailKey = 'remember_me_email';
+  static const String _rememberMeKey = 'remember_me';
   
   // Default restaurant ID for single restaurant app
   static const String _defaultRestaurantId = 'default_restaurant';
@@ -132,5 +134,27 @@ class LocalStorageService {
   // Set restaurant ID (optional, if needed to change)
   Future<void> setRestaurantId(String restaurantId) async {
     await _prefs.setString(_restaurantIdKey, restaurantId);
+  }
+
+  // Save email for remember me
+  Future<void> saveRememberMeEmail(String email) async {
+    await _prefs.setString(_rememberMeEmailKey, email);
+    await _prefs.setBool(_rememberMeKey, true);
+  }
+
+  // Get saved email for remember me
+  String? getRememberMeEmail() {
+    return _prefs.getString(_rememberMeEmailKey);
+  }
+
+  // Check if remember me is enabled
+  bool isRememberMeEnabled() {
+    return _prefs.getBool(_rememberMeKey) ?? false;
+  }
+
+  // Clear remember me data
+  Future<void> clearRememberMe() async {
+    await _prefs.remove(_rememberMeEmailKey);
+    await _prefs.remove(_rememberMeKey);
   }
 }

@@ -35,7 +35,7 @@ class AuthService {
         'email': email,
         'fullName': fullName,
         'phoneNumber': phoneNumber,
-        'role': UserRole.order,
+        'role': UserRole.customer,
         'restaurantID': null,
         'isActive': true,
         'createdAt': DateTime.now().toIso8601String(),
@@ -46,7 +46,7 @@ class AuthService {
         userId: userCredential.user!.uid,
         email: email,
         fullName: fullName,
-        role: UserRole.order,
+        role: UserRole.customer,
         phoneNumber: phoneNumber,
         restaurantID: null,
       );
@@ -64,6 +64,26 @@ class AuthService {
       print('Lỗi khi đăng ký: $e');
       throw Exception('Lỗi không xác định khi đăng ký: $e');
     }
+  }
+
+  // Đăng nhập bằng username hoặc email
+  // Lưu ý: Do giới hạn bảo mật database, chỉ hỗ trợ đăng nhập bằng email
+  Future<UserCredential?> signInWithUsernameOrEmail({
+    required String usernameOrEmail,
+    required String password,
+  }) async {
+    String email = usernameOrEmail.trim();
+    
+    // Kiểm tra xem input có phải là email không
+    bool isEmail = RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(email);
+    
+    // Chỉ cho phép đăng nhập bằng email để đảm bảo bảo mật
+    if (!isEmail) {
+      throw Exception('Vui lòng đăng nhập bằng email. Ví dụ: user@example.com');
+    }
+    
+    // Đăng nhập bằng email
+    return await signIn(email: email, password: password);
   }
 
   // Đăng nhập
@@ -189,7 +209,7 @@ class AuthService {
         DatabaseEvent event = await _database.ref('users/${user.uid}').once();
         bool userExists = event.snapshot.exists;
 
-        String userRole = UserRole.order; // Role mặc định là KHÁCH HÀNG
+        String userRole = UserRole.customer; // Role mặc định là KHÁCH HÀNG
         String fullName = user.displayName ?? 'Google User';
         String phoneNumber = user.phoneNumber ?? '';
 
@@ -212,7 +232,7 @@ class AuthService {
           print('User đã tồn tại, lấy thông tin từ database');
           Map<dynamic, dynamic> userData =
               event.snapshot.value as Map<dynamic, dynamic>? ?? {};
-          userRole = userData['role'] ?? UserRole.order;
+          userRole = userData['role'] ?? UserRole.customer;
           fullName = userData['fullName'] ?? fullName;
           phoneNumber = userData['phoneNumber'] ?? phoneNumber;
           print('Role của user: $userRole');

@@ -10,6 +10,7 @@ import 'order_management_page.dart';
 import 'inventory_management_page.dart';
 import 'owner_restaurant_management_page.dart';
 import 'staff_management_page.dart';
+import 'staff_request_management_page.dart';
 
 class OwnerPage extends StatefulWidget {
   const OwnerPage({super.key});
@@ -206,6 +207,18 @@ class _OwnerPageState extends State<OwnerPage> {
               Navigator.of(context).push(
                 MaterialPageRoute(
                   builder: (context) => const StaffManagementPage(),
+                ),
+              );
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.request_quote),
+            title: const Text('Yêu cầu nhân viên'),
+            onTap: () {
+              Navigator.of(context).pop();
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => const StaffRequestManagementPage(),
                 ),
               );
             },

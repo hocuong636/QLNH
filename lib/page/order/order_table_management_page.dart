@@ -276,7 +276,7 @@ class _OrderTableManagementPageState extends State<OrderTableManagementPage> {
       padding: const EdgeInsets.all(16),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 3,
-        childAspectRatio: 0.75,
+        childAspectRatio: 0.8,
         crossAxisSpacing: 12,
         mainAxisSpacing: 12,
       ),
@@ -303,30 +303,36 @@ class _OrderTableManagementPageState extends State<OrderTableManagementPage> {
               ),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   Container(
-                    padding: const EdgeInsets.all(6),
+                    padding: const EdgeInsets.all(5),
                     decoration: BoxDecoration(
                       color: _getStatusColor(table.status).withOpacity(0.1),
                       shape: BoxShape.circle,
                     ),
                     child: Icon(
                       Icons.table_restaurant,
-                      size: 24,
+                      size: 22,
                       color: _getStatusColor(table.status),
                     ),
                   ),
-                  const SizedBox(height: 6),
-                  Text(
-                    'Bàn ${table.number}',
-                    style: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.bold,
+                  const SizedBox(height: 5),
+                  Flexible(
+                    child: Text(
+                      'Bàn ${table.number}',
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      textAlign: TextAlign.center,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                  const SizedBox(height: 3),
+                  const SizedBox(height: 2),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                     decoration: BoxDecoration(
                       color: _getStatusColor(table.status).withOpacity(0.15),
                       borderRadius: BorderRadius.circular(12),
@@ -334,16 +340,21 @@ class _OrderTableManagementPageState extends State<OrderTableManagementPage> {
                     child: Text(
                       _getStatusText(table.status),
                       style: TextStyle(
-                        fontSize: 11,
+                        fontSize: 10,
                         color: _getStatusColor(table.status),
                         fontWeight: FontWeight.w600,
                       ),
                     ),
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    '${table.capacity} người',
-                    style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+                  const SizedBox(height: 2),
+                  Flexible(
+                    child: Text(
+                      '${table.capacity} người',
+                      style: TextStyle(fontSize: 10, color: Colors.grey.shade600),
+                      textAlign: TextAlign.center,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
                 ],
               ),

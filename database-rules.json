@@ -72,6 +72,43 @@
         ".read": "auth != null && (auth.uid == 'admin' || data.child('restaurantID').val() == root.child('users').child(auth.uid).child('restaurantID').val())",
         ".write": "auth != null && (auth.uid == 'admin' || (data.exists() ? data.child('restaurantID').val() == root.child('users').child(auth.uid).child('restaurantID').val() : true) && newData.child('restaurantID').val() == root.child('users').child(auth.uid).child('restaurantID').val())"
       }
+    },
+    
+    // Service packages - all authenticated users can read, only admin can write
+    "service_packages": {
+      ".read": "auth != null",
+      ".write": "auth != null && (auth.uid == 'admin' || root.child('users').child(auth.uid).child('role').val() == 'admin')"
+    },
+    
+    // System settings - only admin can manage
+    "system_settings": {
+      ".read": "auth != null && (auth.uid == 'admin' || root.child('users').child(auth.uid).child('role').val() == 'admin')",
+      ".write": "auth != null && (auth.uid == 'admin' || root.child('users').child(auth.uid).child('role').val() == 'admin')"
+    },
+    
+    // Audit logs - only admin can manage
+    "audit_logs": {
+      ".read": "auth != null && (auth.uid == 'admin' || root.child('users').child(auth.uid).child('role').val() == 'admin')",
+      ".write": "auth != null && (auth.uid == 'admin' || root.child('users').child(auth.uid).child('role').val() == 'admin')"
+    },
+    
+    // Notifications - users can read their own, admin can read all
+    "notifications": {
+      ".read": "auth != null",
+      ".write": "auth != null && (auth.uid == 'admin' || root.child('users').child(auth.uid).child('role').val() == 'admin')",
+      "$notificationId": {
+        ".read": "auth != null && (auth.uid == 'admin' || root.child('users').child(auth.uid).child('role').val() == 'admin' || data.child('userId').val() == auth.uid)"
+      }
+    },
+    
+    // Requests - users can create their own, admin can read/update all, owners can read/update their restaurant's staff requests
+    "requests": {
+      ".read": "auth != null && (auth.uid == 'admin' || root.child('users').child(auth.uid).child('role').val() == 'admin' || root.child('users').child(auth.uid).child('role').val() == 'OWNER')",
+      ".write": "auth != null",
+      "$requestId": {
+        ".read": "auth != null && (auth.uid == 'admin' || root.child('users').child(auth.uid).child('role').val() == 'admin' || data.child('userId').val() == auth.uid || (root.child('users').child(auth.uid).child('role').val() == 'OWNER' && data.child('ownerId').val() == auth.uid))",
+        ".write": "auth != null && (auth.uid == 'admin' || root.child('users').child(auth.uid).child('role').val() == 'admin' || data.child('userId').val() == auth.uid || (root.child('users').child(auth.uid).child('role').val() == 'OWNER' && data.child('ownerId').val() == auth.uid))"
+      }
     }
   }
 }

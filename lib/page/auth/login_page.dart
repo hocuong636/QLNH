@@ -21,12 +21,34 @@ class _LoginPageState extends State<LoginPage> {
 
   bool _isLoading = false;
   bool _obscurePassword = true;
+  bool _rememberMe = false;
+
+  // Color constants matching the design
+  static const Color _lightGreen = Color(0xFFE8F5E9);
+  static const Color _darkGreen = Color(0xFF2E7D32);
+
+  @override
+  void initState() {
+    super.initState();
+    _loadRememberedEmail();
+  }
 
   @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
+  }
+
+  // Load remembered email when page initializes
+  void _loadRememberedEmail() {
+    String? rememberedEmail = _localStorageService.getRememberMeEmail();
+    if (rememberedEmail != null && rememberedEmail.isNotEmpty) {
+      _emailController.text = rememberedEmail;
+      setState(() {
+        _rememberMe = true;
+      });
+    }
   }
 
   Future<void> _handleLogin() async {
@@ -39,12 +61,23 @@ class _LoginPageState extends State<LoginPage> {
     });
 
     try {
-      await _authService.signIn(
-        email: _emailController.text.trim(),
+      await _authService.signInWithUsernameOrEmail(
+        usernameOrEmail: _emailController.text.trim(),
         password: _passwordController.text,
       );
 
       if (mounted) {
+        // Lấy email thực tế từ local storage (đã được lưu sau khi đăng nhập thành công)
+        String? actualEmail = _localStorageService.getUserEmail();
+        
+        // Lưu email nếu remember me được chọn
+        if (_rememberMe && actualEmail != null) {
+          await _localStorageService.saveRememberMeEmail(actualEmail);
+        } else {
+          // Xóa email đã lưu nếu không chọn remember me
+          await _localStorageService.clearRememberMe();
+        }
+
         // Lấy role từ local storage và điều hướng theo role
         String? userRole = _localStorageService.getUserRole();
         String route = UserRole.getRouteForRole(userRole);
@@ -73,87 +106,115 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Colors.white, Colors.grey[200]!],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
-        ),
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 24.0),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                const SizedBox(height: 60),
-                const Icon(
-                  Icons.restaurant_menu,
-                  size: 80,
-                  color: Colors.deepPurple,
-                ),
-                const SizedBox(height: 20),
-                const Text(
-                  'Chào Mừng Trở Lại',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 32,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black87,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                const Text(
-                  'Đăng nhập để tiếp tục',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.grey,
-                  ),
-                ),
-                const SizedBox(height: 40),
-                Form(
-                  key: _formKey,
-                  child: Column(
-                    children: [
-                      _buildEmailField(),
-                      const SizedBox(height: 20),
-                      _buildPasswordField(),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 10),
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: TextButton(
-                    onPressed: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Tính năng quên mật khẩu sắp có'),
-                        ),
-                      );
-                    },
-                    child: const Text(
-                      'Quên mật khẩu?',
-                      style: TextStyle(color: Colors.deepPurple),
+      backgroundColor: _lightGreen,
+      body: Stack(
+        children: [
+          // Decorative circles
+          _buildDecorativeCircles(),
+          // Leaf decoration at top
+          _buildLeafDecoration(),
+          SafeArea(
+            child: SingleChildScrollView(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const SizedBox(height: 40),
+                    // Title
+                    const Text(
+                      'Welcome Back',
+                      textAlign: TextAlign.left,
+                      style: TextStyle(
+                        fontSize: 32,
+                        fontWeight: FontWeight.bold,
+                        color: _darkGreen,
+                      ),
                     ),
-                  ),
+                    const SizedBox(height: 8),
+                    const Text(
+                      'Login to your Account',
+                      textAlign: TextAlign.left,
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: _darkGreen,
+                      ),
+                    ),
+                    const SizedBox(height: 40),
+                    Form(
+                      key: _formKey,
+                      child: Column(
+                        children: [
+                          _buildEmailField(),
+                          const SizedBox(height: 20),
+                          _buildPasswordField(),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    // Remember me and Forget password
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            Checkbox(
+                              value: _rememberMe,
+                              onChanged: (value) async {
+                                setState(() {
+                                  _rememberMe = value ?? false;
+                                });
+                                // Nếu uncheck, xóa email đã lưu ngay lập tức
+                                if (!_rememberMe) {
+                                  await _localStorageService.clearRememberMe();
+                                }
+                              },
+                              activeColor: _darkGreen,
+                              checkColor: Colors.white,
+                            ),
+                            const Text(
+                              'Remember me',
+                              style: TextStyle(
+                                color: _darkGreen,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ],
+                        ),
+                        TextButton(
+                          onPressed: () {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Tính năng quên mật khẩu sắp có'),
+                              ),
+                            );
+                          },
+                          child: const Text(
+                            'Forget password?',
+                            style: TextStyle(
+                              color: _darkGreen,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 25),
+                    _buildLoginButton(),
+                    const SizedBox(height: 30),
+                    _buildDivider(),
+                    const SizedBox(height: 20),
+                    _buildSocialLogin(),
+                    const SizedBox(height: 30),
+                    _buildSignUpNavigation(),
+                    const SizedBox(height: 40),
+                  ],
                 ),
-                const SizedBox(height: 25),
-                _buildLoginButton(),
-                const SizedBox(height: 30),
-                _buildDivider(),
-                const SizedBox(height: 20),
-                _buildSocialLogin(),
-                const SizedBox(height: 40),
-                _buildSignUpNavigation(),
-                const SizedBox(height: 40),
-              ],
+              ),
             ),
           ),
-        ),
+        ],
       ),
     );
   }
@@ -162,30 +223,29 @@ class _LoginPageState extends State<LoginPage> {
     return TextFormField(
       controller: _emailController,
       decoration: InputDecoration(
-        labelText: 'Email',
-        prefixIcon: const Icon(Icons.email_outlined, color: Colors.deepPurple),
+        hintText: 'User Name / Mail',
+        prefixIcon: const Icon(Icons.person_outline, color: _darkGreen),
         filled: true,
-        fillColor: Colors.white,
+        fillColor: _lightGreen,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide.none,
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.grey.shade300),
+          borderSide: BorderSide.none,
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Colors.deepPurple, width: 1.5),
+          borderSide: const BorderSide(color: _darkGreen, width: 1.5),
         ),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       ),
-      keyboardType: TextInputType.emailAddress,
+      keyboardType: TextInputType.text,
+      style: const TextStyle(color: _darkGreen),
       validator: (value) {
         if (value == null || value.isEmpty) {
-          return 'Vui lòng nhập email';
-        }
-        if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value)) {
-          return 'Email không hợp lệ';
+          return 'Vui lòng nhập username hoặc email';
         }
         return null;
       },
@@ -196,12 +256,12 @@ class _LoginPageState extends State<LoginPage> {
     return TextFormField(
       controller: _passwordController,
       decoration: InputDecoration(
-        labelText: 'Mật Khẩu',
-        prefixIcon: const Icon(Icons.lock_outline, color: Colors.deepPurple),
+        hintText: 'Password',
+        prefixIcon: const Icon(Icons.lock_outline, color: _darkGreen),
         suffixIcon: IconButton(
           icon: Icon(
             _obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
-            color: Colors.grey,
+            color: _darkGreen,
           ),
           onPressed: () {
             setState(() {
@@ -210,21 +270,23 @@ class _LoginPageState extends State<LoginPage> {
           },
         ),
         filled: true,
-        fillColor: Colors.white,
+        fillColor: _lightGreen,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide.none,
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.grey.shade300),
+          borderSide: BorderSide.none,
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Colors.deepPurple, width: 1.5),
+          borderSide: const BorderSide(color: _darkGreen, width: 1.5),
         ),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       ),
       obscureText: _obscurePassword,
+      style: const TextStyle(color: _darkGreen),
       validator: (value) {
         if (value == null || value.isEmpty) {
           return 'Vui lòng nhập mật khẩu';
@@ -239,12 +301,11 @@ class _LoginPageState extends State<LoginPage> {
       onPressed: _isLoading ? null : _handleLogin,
       style: ElevatedButton.styleFrom(
         padding: const EdgeInsets.symmetric(vertical: 16),
-        backgroundColor: Colors.deepPurple,
+        backgroundColor: _darkGreen,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
         ),
-        elevation: 5,
-        shadowColor: Colors.deepPurple.withOpacity(0.4),
+        elevation: 0,
       ),
       child: _isLoading
           ? const SizedBox(
@@ -256,7 +317,7 @@ class _LoginPageState extends State<LoginPage> {
               ),
             )
           : const Text(
-              'Đăng Nhập',
+              'Login',
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
@@ -266,31 +327,58 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  Widget _buildDivider() {
-    return const Row(
+  Widget _buildDecorativeCircles() {
+    return Stack(
       children: [
-        Expanded(child: Divider()),
-        Padding(
-          padding: EdgeInsets.symmetric(horizontal: 16),
-          child: Text(
-            'hoặc đăng nhập với',
-            style: TextStyle(color: Colors.grey),
+        Positioned(
+          top: 100,
+          right: -50,
+          child: Container(
+            width: 150,
+            height: 150,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: _darkGreen.withOpacity(0.1),
+            ),
           ),
         ),
-        Expanded(child: Divider()),
+        Positioned(
+          top: 200,
+          left: -30,
+          child: Container(
+            width: 80,
+            height: 80,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: _darkGreen.withOpacity(0.15),
+            ),
+          ),
+        ),
+        Positioned(
+          bottom: 150,
+          right: 20,
+          child: Container(
+            width: 60,
+            height: 60,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: _darkGreen.withOpacity(0.1),
+            ),
+          ),
+        ),
       ],
     );
   }
 
-  Widget _buildSocialLogin() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        IconButton(
-          icon: Image.asset('assets/images/google_logo.png', height: 35),
-          onPressed: _handleGoogleSignIn,
-        ),
-      ],
+  Widget _buildLeafDecoration() {
+    return Positioned(
+      top: 0,
+      left: 0,
+      right: 0,
+      child: CustomPaint(
+        size: Size(MediaQuery.of(context).size.width, 100),
+        painter: LeafPainter(),
+      ),
     );
   }
 
@@ -328,13 +416,79 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
+  Widget _buildDivider() {
+    return Row(
+      children: [
+        Expanded(
+          child: Container(
+            height: 1,
+            color: _darkGreen.withOpacity(0.3),
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Text(
+            'Or Continue with',
+            style: TextStyle(
+              color: _darkGreen.withOpacity(0.7),
+              fontSize: 14,
+            ),
+          ),
+        ),
+        Expanded(
+          child: Container(
+            height: 1,
+            color: _darkGreen.withOpacity(0.3),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSocialLogin() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        _buildGoogleButton(),
+      ],
+    );
+  }
+
+  Widget _buildGoogleButton() {
+    return Container(
+      width: 50,
+      height: 50,
+      decoration: BoxDecoration(
+        color: _lightGreen,
+        shape: BoxShape.circle,
+        border: Border.all(color: _darkGreen.withOpacity(0.3)),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(25),
+          onTap: _handleGoogleSignIn,
+          child: Container(
+            padding: const EdgeInsets.all(12),
+            child: Image.asset(
+              'assets/images/google_logo.png',
+              width: 24,
+              height: 24,
+              fit: BoxFit.contain,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildSignUpNavigation() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         const Text(
-          "Chưa có tài khoản? ",
-          style: TextStyle(color: Colors.grey),
+          "Don't have account? ",
+          style: TextStyle(color: _darkGreen),
         ),
         GestureDetector(
           onTap: () {
@@ -343,9 +497,9 @@ class _LoginPageState extends State<LoginPage> {
             ));
           },
           child: const Text(
-            'Đăng ký ngay',
+            'Sign up',
             style: TextStyle(
-              color: Colors.deepPurple,
+              color: _darkGreen,
               fontWeight: FontWeight.bold,
             ),
           ),
@@ -353,4 +507,37 @@ class _LoginPageState extends State<LoginPage> {
       ],
     );
   }
+}
+
+// Custom painter for leaf decoration
+class LeafPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = const Color(0xFF2E7D32).withOpacity(0.2)
+      ..style = PaintingStyle.fill;
+
+    // Draw stylized leaves
+    final path1 = Path()
+      ..moveTo(size.width * 0.1, 0)
+      ..quadraticBezierTo(size.width * 0.15, 20, size.width * 0.2, 40)
+      ..quadraticBezierTo(size.width * 0.18, 60, size.width * 0.1, 80)
+      ..quadraticBezierTo(size.width * 0.05, 60, size.width * 0.05, 40)
+      ..quadraticBezierTo(size.width * 0.05, 20, size.width * 0.1, 0)
+      ..close();
+
+    final path2 = Path()
+      ..moveTo(size.width * 0.3, 10)
+      ..quadraticBezierTo(size.width * 0.35, 30, size.width * 0.4, 50)
+      ..quadraticBezierTo(size.width * 0.38, 70, size.width * 0.3, 90)
+      ..quadraticBezierTo(size.width * 0.25, 70, size.width * 0.25, 50)
+      ..quadraticBezierTo(size.width * 0.25, 30, size.width * 0.3, 10)
+      ..close();
+
+    canvas.drawPath(path1, paint);
+    canvas.drawPath(path2, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

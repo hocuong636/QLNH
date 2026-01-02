@@ -16,10 +16,15 @@ class _SystemSettingsPageState extends State<SystemSettingsPage> {
       TextEditingController();
   final TextEditingController _notificationMessageController =
       TextEditingController();
+  final TextEditingController _sessionTimeoutController = TextEditingController();
+  final TextEditingController _maxLoginAttemptsController = TextEditingController();
 
   Map<String, dynamic> _settings = {};
   bool _isLoading = true;
   bool _isSaving = false;
+  bool _requireEmailVerification = false;
+  bool _enableTwoFactorAuth = false;
+  String _selectedNotificationGroup = 'all'; // all, owners, staff, customers
 
   @override
   void initState() {
@@ -33,6 +38,8 @@ class _SystemSettingsPageState extends State<SystemSettingsPage> {
     _currencyController.dispose();
     _notificationTitleController.dispose();
     _notificationMessageController.dispose();
+    _sessionTimeoutController.dispose();
+    _maxLoginAttemptsController.dispose();
     super.dispose();
   }
 
@@ -51,6 +58,10 @@ class _SystemSettingsPageState extends State<SystemSettingsPage> {
             _settings = Map<String, dynamic>.from(data);
             _taxRateController.text = (_settings['taxRate'] ?? 0.0).toString();
             _currencyController.text = _settings['currency'] ?? 'VND';
+            _requireEmailVerification = _settings['requireEmailVerification'] ?? false;
+            _enableTwoFactorAuth = _settings['enableTwoFactorAuth'] ?? false;
+            _sessionTimeoutController.text = (_settings['sessionTimeoutMinutes'] ?? 30).toString();
+            _maxLoginAttemptsController.text = (_settings['maxLoginAttempts'] ?? 5).toString();
           });
         } else {
           // Handle case where data is not a Map (e.g., it's a primitive value or null)
@@ -96,6 +107,10 @@ class _SystemSettingsPageState extends State<SystemSettingsPage> {
         ..._settings,
         'taxRate': double.tryParse(_taxRateController.text) ?? 0.0,
         'currency': _currencyController.text,
+        'requireEmailVerification': _requireEmailVerification,
+        'enableTwoFactorAuth': _enableTwoFactorAuth,
+        'sessionTimeoutMinutes': int.tryParse(_sessionTimeoutController.text) ?? 30,
+        'maxLoginAttempts': int.tryParse(_maxLoginAttemptsController.text) ?? 5,
         'updatedAt': DateTime.now().toIso8601String(),
       };
 
@@ -141,6 +156,7 @@ class _SystemSettingsPageState extends State<SystemSettingsPage> {
         'message': _notificationMessageController.text,
         'timestamp': DateTime.now().toIso8601String(),
         'type': 'system',
+        'targetGroup': _selectedNotificationGroup,
       };
 
       // Add to notifications list
@@ -183,41 +199,61 @@ class _SystemSettingsPageState extends State<SystemSettingsPage> {
   void _showSendNotificationDialog() {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Gửi thông báo hệ thống'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: _notificationTitleController,
-                decoration: const InputDecoration(
-                  labelText: 'Tiêu đề thông báo *',
-                  hintText: 'Cập nhật hệ thống',
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: const Text('Gửi thông báo hệ thống'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: _notificationTitleController,
+                  decoration: const InputDecoration(
+                    labelText: 'Tiêu đề thông báo *',
+                    hintText: 'Cập nhật hệ thống',
+                  ),
                 ),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: _notificationMessageController,
-                decoration: const InputDecoration(
-                  labelText: 'Nội dung thông báo *',
-                  hintText: 'Thông báo về việc bảo trì hệ thống...',
+                const SizedBox(height: 16),
+                TextField(
+                  controller: _notificationMessageController,
+                  decoration: const InputDecoration(
+                    labelText: 'Nội dung thông báo *',
+                    hintText: 'Thông báo về việc bảo trì hệ thống...',
+                  ),
+                  maxLines: 4,
                 ),
-                maxLines: 4,
-              ),
-            ],
+                const SizedBox(height: 16),
+                DropdownButtonFormField<String>(
+                  value: _selectedNotificationGroup,
+                  decoration: const InputDecoration(
+                    labelText: 'Gửi đến nhóm',
+                  ),
+                  items: const [
+                    DropdownMenuItem(value: 'all', child: Text('Tất cả người dùng')),
+                    DropdownMenuItem(value: 'owners', child: Text('Chủ nhà hàng')),
+                    DropdownMenuItem(value: 'staff', child: Text('Nhân viên')),
+                    DropdownMenuItem(value: 'customers', child: Text('Khách hàng')),
+                  ],
+                  onChanged: (value) {
+                    setDialogState(() {
+                      _selectedNotificationGroup = value ?? 'all';
+                    });
+                  },
+                ),
+              ],
+            ),
           ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Hủy'),
+            ),
+            ElevatedButton(
+              onPressed: _sendSystemNotification,
+              child: const Text('Gửi'),
+            ),
+          ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Hủy'),
-          ),
-          ElevatedButton(
-            onPressed: _sendSystemNotification,
-            child: const Text('Gửi'),
-          ),
-        ],
       ),
     );
   }
@@ -291,6 +327,83 @@ class _SystemSettingsPageState extends State<SystemSettingsPage> {
                                       ),
                                     )
                                   : const Text('Lưu cài đặt'),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 24),
+
+                  // Security Settings
+                  Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Cấu hình Bảo mật',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          SwitchListTile(
+                            title: const Text('Yêu cầu xác thực email'),
+                            subtitle: const Text('Người dùng phải xác thực email khi đăng ký'),
+                            value: _requireEmailVerification,
+                            onChanged: (value) {
+                              setState(() {
+                                _requireEmailVerification = value;
+                              });
+                            },
+                          ),
+                          SwitchListTile(
+                            title: const Text('Bật xác thực 2 lớp'),
+                            subtitle: const Text('Yêu cầu mã OTP khi đăng nhập'),
+                            value: _enableTwoFactorAuth,
+                            onChanged: (value) {
+                              setState(() {
+                                _enableTwoFactorAuth = value;
+                              });
+                            },
+                          ),
+                          const SizedBox(height: 16),
+                          TextField(
+                            controller: _sessionTimeoutController,
+                            decoration: const InputDecoration(
+                              labelText: 'Thời gian hết phiên (phút)',
+                              hintText: '30',
+                              suffixText: 'phút',
+                            ),
+                            keyboardType: TextInputType.number,
+                          ),
+                          const SizedBox(height: 16),
+                          TextField(
+                            controller: _maxLoginAttemptsController,
+                            decoration: const InputDecoration(
+                              labelText: 'Số lần đăng nhập sai tối đa',
+                              hintText: '5',
+                            ),
+                            keyboardType: TextInputType.number,
+                          ),
+                          const SizedBox(height: 16),
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton(
+                              onPressed: _isSaving ? null : _saveSettings,
+                              child: _isSaving
+                                  ? const SizedBox(
+                                      width: 20,
+                                      height: 20,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                      ),
+                                    )
+                                  : const Text('Lưu cài đặt bảo mật'),
                             ),
                           ),
                         ],

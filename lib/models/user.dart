@@ -6,6 +6,8 @@ class UserModel {
   final String role;
   final String? restaurantID; // null khi chưa thuộc nhà hàng nào
   final bool isActive;
+  final String? packageId; // ID của gói dịch vụ (chỉ cho owner)
+  final DateTime? packageExpiryDate; // Ngày hết hạn gói dịch vụ
   final DateTime createdAt;
   final DateTime? updatedAt;
 
@@ -17,6 +19,8 @@ class UserModel {
     required this.role,
     this.restaurantID,
     this.isActive = true,
+    this.packageId,
+    this.packageExpiryDate,
     required this.createdAt,
     this.updatedAt,
   });
@@ -30,6 +34,10 @@ class UserModel {
       role: json['role'] ?? '',
       restaurantID: json['restaurantID'],
       isActive: json['isActive'] ?? true,
+      packageId: json['packageId'],
+      packageExpiryDate: json['packageExpiryDate'] != null
+          ? DateTime.parse(json['packageExpiryDate'])
+          : null,
       createdAt: json['createdAt'] != null
           ? DateTime.parse(json['createdAt'])
           : DateTime.now(),
@@ -48,6 +56,8 @@ class UserModel {
       'role': role,
       'restaurantID': restaurantID,
       'isActive': isActive,
+      'packageId': packageId,
+      'packageExpiryDate': packageExpiryDate?.toIso8601String(),
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt?.toIso8601String(),
     };
@@ -61,6 +71,8 @@ class UserModel {
     String? role,
     String? restaurantID,
     bool? isActive,
+    String? packageId,
+    DateTime? packageExpiryDate,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -72,6 +84,8 @@ class UserModel {
       role: role ?? this.role,
       restaurantID: restaurantID ?? this.restaurantID,
       isActive: isActive ?? this.isActive,
+      packageId: packageId ?? this.packageId,
+      packageExpiryDate: packageExpiryDate ?? this.packageExpiryDate,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );

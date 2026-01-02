@@ -6,6 +6,7 @@ class UserRole {
   // Role mới
   static const String owner = 'OWNER';
   static const String kitchen = 'KITCHEN';
+  static const String customer = 'customer'; // Khách hàng
   
   // Danh sách tất cả các role
   static const List<String> allRoles = [
@@ -13,6 +14,7 @@ class UserRole {
     order,
     owner,
     kitchen,
+    customer,
   ];
   
   // Kiểm tra xem role có phải là admin hoặc có quyền admin không
@@ -37,7 +39,9 @@ class UserRole {
       case kitchen:
         return 'Xử lý và chế biến món ăn';
       case order:
-        return 'Nhận order & thanh toán ';
+        return 'Nhận order & thanh toán';
+      case customer:
+        return 'Khách hàng';
       default:
         return 'Không xác định';
     }
@@ -54,8 +58,10 @@ class UserRole {
         return '/kitchen';
       case order:
         return '/order';
+      case customer:
+        return '/customer';
       default:
-        return '/home';
+        return '/customer'; // Mặc định là customer
     }
   }
 }

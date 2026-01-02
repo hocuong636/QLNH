@@ -5,6 +5,13 @@ import 'package:quanlynhahang/services/auth_service.dart';
 import 'package:quanlynhahang/constants/restaurant_status.dart';
 import 'owner_management_page.dart';
 import 'restaurant_management_page.dart';
+import 'user_management_page.dart';
+import 'reports_page.dart';
+import 'audit_log_page.dart';
+import 'system_settings_page.dart';
+import 'service_package_management_page.dart';
+import 'owner_package_management_page.dart';
+import 'request_management_page.dart';
 import '../shared/profile_page.dart';
 
 class AdminPage extends StatefulWidget {
@@ -14,7 +21,7 @@ class AdminPage extends StatefulWidget {
   State<AdminPage> createState() => _AdminPageState();
 }
 
-class _AdminPageState extends State<AdminPage> with TickerProviderStateMixin {
+class _AdminPageState extends State<AdminPage> {
   final AuthService _authService = AuthService();
 
   // Sử dụng cùng database instance như AuthService
@@ -25,27 +32,6 @@ class _AdminPageState extends State<AdminPage> with TickerProviderStateMixin {
   DatabaseReference get _dbRef => _database.ref();
 
   int _selectedIndex = 0;
-  late AnimationController _fabAnimationController;
-  late Animation<double> _fabAnimation;
-
-  @override
-  void initState() {
-    super.initState();
-    _fabAnimationController = AnimationController(
-      duration: const Duration(milliseconds: 200),
-      vsync: this,
-    );
-    _fabAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _fabAnimationController, curve: Curves.easeInOut),
-    );
-    _fabAnimationController.forward();
-  }
-
-  @override
-  void dispose() {
-    _fabAnimationController.dispose();
-    super.dispose();
-  }
 
   void _onItemTapped(int index) {
     setState(() {
@@ -113,55 +99,65 @@ class _AdminPageState extends State<AdminPage> with TickerProviderStateMixin {
 
     List<Widget> pages = [
       _buildDashboardPage(),
-      const OwnerManagementPage(),
-      const RestaurantManagementPage(),
+      const UserManagementPage(),
+      const ReportsPage(),
+      const SystemSettingsPage(),
       const ProfilePage(),
     ];
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFAFAFA),
+      backgroundColor: const Color(0xFFF5FAFF),
       appBar: AppBar(
         backgroundColor: Colors.white,
         surfaceTintColor: Colors.white,
         elevation: 0,
-        centerTitle: true,
+        centerTitle: false,
+        titleSpacing: 16,
         title: Row(
-          mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: colorScheme.primaryContainer.withOpacity(0.3),
-                borderRadius: BorderRadius.circular(12),
-              ),
+            CircleAvatar(
+              radius: 20,
+              backgroundColor: colorScheme.primary.withOpacity(0.1),
               child: Icon(
-                Icons.restaurant_menu,
+                Icons.person_outline,
                 color: colorScheme.primary,
-                size: 24,
               ),
             ),
             const SizedBox(width: 12),
-            const Text(
-              'Quản Lý Nhà Hàng',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                color: Color(0xFF1A1A1A),
-                letterSpacing: 0.5,
-              ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: const [
+                Text(
+                  'Xin chào, Admin 👋',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF1A1A1A),
+                  ),
+                ),
+                SizedBox(height: 2),
+                Text(
+                  'Tổng quan hệ thống hôm nay',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Color(0xFF8E8E93),
+                  ),
+                ),
+              ],
             ),
           ],
         ),
         actions: [
           IconButton(
+            onPressed: () {
+              // TODO: mở trang thông báo hệ thống
+            },
+            icon: const Icon(Icons.notifications_none_rounded,
+                color: Color(0xFF666666)),
+          ),
+          IconButton(
             onPressed: _handleLogout,
             icon: const Icon(Icons.logout_rounded, color: Color(0xFF666666)),
-            style: IconButton.styleFrom(
-              backgroundColor: Colors.transparent,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
             tooltip: 'Đăng xuất',
           ),
         ],
@@ -173,121 +169,197 @@ class _AdminPageState extends State<AdminPage> with TickerProviderStateMixin {
         ),
       ),
       bottomNavigationBar: _buildBottomNavigationBar(),
-      floatingActionButton: _selectedIndex == 0 ? _buildQuickActionFAB() : null,
     );
   }
 
   Widget _buildDashboardPage() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(24.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header Section
-          // Container(
-          //   padding: const EdgeInsets.all(20),
-          //   decoration: BoxDecoration(
-          //     gradient: const LinearGradient(
-          //       colors: [Colors.blue, Colors.indigo],
-          //       begin: Alignment.topLeft,
-          //       end: Alignment.bottomRight,
-          //     ),
-          //     borderRadius: BorderRadius.circular(16),
-          //     boxShadow: [
-          //       BoxShadow(
-          //         color: Colors.blue.withOpacity(0.3),
-          //         blurRadius: 12,
-          //         offset: const Offset(0, 6),
-          //       ),
-          //     ],
-          //   ),
-          //   child: const Column(
-          //     crossAxisAlignment: CrossAxisAlignment.start,
-          //     children: [
-          //       Text(
-          //         'Dashboard',
-          //         style: TextStyle(
-          //           fontSize: 32,
-          //           fontWeight: FontWeight.bold,
-          //           color: Colors.white,
-          //           letterSpacing: 1.2,
-          //         ),
-          //       ),
-          //       SizedBox(height: 8),
-          //       Text(
-          //         'Tổng quan hệ thống quản lý nhà hàng',
-          //         style: TextStyle(
-          //           fontSize: 16,
-          //           color: Colors.white70,
-          //           fontWeight: FontWeight.w400,
-          //         ),
-          //       ),
-          //     ],
-          //   ),
-          // ),
-          const SizedBox(height: 32),
+    return Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Color(0xFFF5FAFF), Color(0xFFFDFEFF)],
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+        ),
+      ),
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(24, 24, 24, 24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
 
-          // Stats Grid
-          const Text(
-            'Thống Kê Hệ Thống',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.w600,
-              color: Colors.black87,
+            const Text(
+              'Thống kê nhanh',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF1A1A1A),
+              ),
+            ),
+
+            const SizedBox(height: 16),
+
+            _buildStatCard(
+              title: 'Tổng Người Dùng',
+              subtitle: 'Tất cả tài khoản trong hệ thống',
+              icon: Icons.people_outline,
+              color: const Color(0xFF3498DB),
+              stream: _dbRef.child('users').onValue,
+            ),
+
+            const SizedBox(height: 14),
+
+            _buildStatCard(
+              title: 'Tổng Nhà Hàng',
+              subtitle: 'Bao gồm mọi trạng thái',
+              icon: Icons.store_mall_directory_outlined,
+              color: const Color(0xFF9B59B6),
+              stream: _dbRef.child('restaurants').onValue,
+            ),
+
+            const SizedBox(height: 24),
+
+            const Text(
+              'Chức năng Quản lý',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF1A1A1A),
+              ),
+            ),
+
+            const SizedBox(height: 16),
+
+            Row(
+              children: [
+                Expanded(
+                  child: _buildQuickActionCard(
+                    title: 'Quản lý Người dùng',
+                    icon: Icons.people_outline,
+                    color: const Color(0xFF3498DB),
+                    onTap: () {
+                      setState(() {
+                        _selectedIndex = 1;
+                      });
+                    },
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _buildQuickActionCard(
+                    title: 'Báo cáo & Thống kê',
+                    icon: Icons.analytics_outlined,
+                    color: const Color(0xFF2ECC71),
+                    onTap: () {
+                      setState(() {
+                        _selectedIndex = 2;
+                      });
+                    },
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 12),
+
+            Row(
+              children: [
+                Expanded(
+                  child: _buildQuickActionCard(
+                    title: 'Owner & Gói',
+                    icon: Icons.business_center,
+                    color: const Color(0xFF00BCD4),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const OwnerPackageManagementPage(),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _buildQuickActionCard(
+                    title: 'Yêu cầu',
+                    icon: Icons.request_quote,
+                    color: const Color(0xFF9B59B6),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const RequestManagementPage(),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildQuickActionCard({
+    required String title,
+    required IconData icon,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Card(
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            gradient: LinearGradient(
+              colors: [Colors.white, color.withOpacity(0.03)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
             ),
           ),
-
-          const SizedBox(height: 20),
-
-          /// Tổng người dùng
-          _buildStatCard(
-            title: 'Tổng Người Dùng',
-            icon: Icons.people_outline,
-            color: Colors.blue,
-            stream: _dbRef.child('users').onValue,
+          child: Column(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(icon, color: color, size: 24),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                title,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF1A1A1A),
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
           ),
-
-          const SizedBox(height: 16),
-
-          /// Nhà hàng đang hoạt động
-          _buildStatCard(
-            title: 'Nhà Hàng Đang Hoạt Động',
-            icon: Icons.restaurant,
-            color: Colors.green,
-            stream: _dbRef.child('restaurants').onValue,
-            filter: (data) {
-              if (data is! Map) return 0;
-              int count = 0;
-              data.forEach((key, value) {
-                if (value is Map) {
-                  final status = value['status']?.toString();
-                  if (status == RestaurantStatus.active) {
-                    count++;
-                  }
-                }
-              });
-              return count;
-            },
-          ),
-
-          const SizedBox(height: 16),
-
-          /// Tổng nhà hàng
-          _buildStatCard(
-            title: 'Tổng Nhà Hàng',
-            icon: Icons.restaurant_outlined,
-            color: Colors.blue,
-            stream: _dbRef.child('restaurants').onValue,
-          ),
-
-          const SizedBox(height: 16),
-        ],
+        ),
       ),
     );
   }
 
   Widget _buildStatCard({
     required String title,
+    required String subtitle,
     required IconData icon,
     required Color color,
     required Stream<DatabaseEvent> stream,
@@ -297,55 +369,69 @@ class _AdminPageState extends State<AdminPage> with TickerProviderStateMixin {
       duration: const Duration(milliseconds: 300),
       curve: Curves.easeInOut,
       child: Card(
-        elevation: 8,
-        shadowColor: color.withOpacity(0.3),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        elevation: 0,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
         child: Container(
-          padding: const EdgeInsets.all(24),
+          padding: const EdgeInsets.all(18),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(24),
             gradient: LinearGradient(
-              colors: [Colors.white, color.withOpacity(0.05)],
+              colors: [Colors.white, color.withOpacity(0.03)],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.04),
+                blurRadius: 18,
+                offset: const Offset(0, 8),
+              ),
+            ],
           ),
           child: Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
-                    colors: [color.withOpacity(0.2), color.withOpacity(0.1)],
+                    colors: [color.withOpacity(0.18), color.withOpacity(0.08)],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(18),
                   boxShadow: [
                     BoxShadow(
-                      color: color.withOpacity(0.2),
-                      blurRadius: 8,
+                      color: color.withOpacity(0.18),
+                      blurRadius: 12,
                       offset: const Offset(0, 4),
                     ),
                   ],
                 ),
-                child: Icon(icon, color: color, size: 36),
+                child: Icon(icon, color: color, size: 26),
               ),
-              const SizedBox(width: 24),
+              const SizedBox(width: 18),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       title,
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: Colors.grey.shade700,
+                      style: const TextStyle(
+                        fontSize: 15,
+                        color: Color(0xFF1A1A1A),
                         fontWeight: FontWeight.w600,
-                        letterSpacing: 0.5,
+                        letterSpacing: 0.3,
                       ),
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 4),
+                    Text(
+                      subtitle,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey.shade600,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
                     StreamBuilder<DatabaseEvent>(
                       stream: stream,
                       builder: (context, snapshot) {
@@ -493,14 +579,19 @@ class _AdminPageState extends State<AdminPage> with TickerProviderStateMixin {
               label: 'Dashboard',
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.person_outline, size: 24),
-              activeIcon: Icon(Icons.person, size: 26),
-              label: 'Owner',
+              icon: Icon(Icons.people_outline, size: 24),
+              activeIcon: Icon(Icons.people, size: 26),
+              label: 'Người dùng',
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.restaurant_outlined, size: 24),
-              activeIcon: Icon(Icons.restaurant, size: 26),
-              label: 'Nhà Hàng',
+              icon: Icon(Icons.analytics_outlined, size: 24),
+              activeIcon: Icon(Icons.analytics, size: 26),
+              label: 'Báo cáo',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.settings_outlined, size: 24),
+              activeIcon: Icon(Icons.settings, size: 26),
+              label: 'Cài đặt',
             ),
             BottomNavigationBarItem(
               icon: Icon(Icons.account_circle_outlined, size: 24),
@@ -513,28 +604,4 @@ class _AdminPageState extends State<AdminPage> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildQuickActionFAB() {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return ScaleTransition(
-      scale: _fabAnimation,
-      child: FloatingActionButton.extended(
-        onPressed: () {
-          // Quick action - navigate to restaurant management
-          setState(() {
-            _selectedIndex = 2;
-          });
-        },
-        backgroundColor: colorScheme.primary,
-        foregroundColor: Colors.white,
-        elevation: 8,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        icon: const Icon(Icons.add, size: 20),
-        label: const Text(
-          'Thêm Nhà Hàng',
-          style: TextStyle(fontWeight: FontWeight.w600, letterSpacing: 0.3),
-        ),
-      ),
-    );
-  }
 }
