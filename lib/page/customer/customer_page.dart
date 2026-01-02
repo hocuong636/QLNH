@@ -660,7 +660,10 @@ class _CustomerPageState extends State<CustomerPage> {
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.of(context).pop(),
+              onPressed: () {
+                Navigator.of(context).pop();
+                _selectedPackage = null;
+              },
               child: const Text('Hủy'),
             ),
             FilledButton(
@@ -668,9 +671,567 @@ class _CustomerPageState extends State<CustomerPage> {
                   ? null
                   : () {
                       Navigator.of(context).pop();
-                      _submitOwnerRequest();
+                      _showRestaurantInfoDialog(_selectedPackage!);
                     },
-              child: const Text('Gửi yêu cầu'),
+              child: const Text('Tiếp tục'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _showRestaurantInfoDialog(ServicePackage package) async {
+    final _formKey = GlobalKey<FormState>();
+    final _nameController = TextEditingController();
+    final _addressController = TextEditingController();
+    final _phoneController = TextEditingController();
+    final _emailController = TextEditingController();
+    final _descriptionController = TextEditingController();
+    final _openingHoursController = TextEditingController();
+    final _capacityController = TextEditingController();
+
+    if (!mounted) return;
+
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => Dialog(
+          child: Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(20),
+            ),
+            clipBehavior: Clip.antiAlias,
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(context).size.height * 0.85,
+              maxWidth: 500,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Header
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.shade50,
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(20),
+                      topRight: Radius.circular(20),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.blue.shade100,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Icon(Icons.restaurant, color: Colors.blue.shade700),
+                      ),
+                      const SizedBox(width: 12),
+                      const Expanded(
+                        child: Text(
+                          'Thông tin nhà hàng',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF1A1A1A),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                // Content
+                Flexible(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(20),
+                    child: Form(
+                      key: _formKey,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                    // Section: Thông tin cơ bản
+                    Container(
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      child: Row(
+                        children: [
+                          Icon(Icons.info_outline, size: 18, color: Colors.blue.shade700),
+                          const SizedBox(width: 6),
+                          Text(
+                            'Thông tin cơ bản',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.blue.shade700,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: _nameController,
+                      decoration: InputDecoration(
+                        labelText: 'Tên nhà hàng',
+                        hintText: 'VD: Nhà hàng ABC',
+                        prefixIcon: const Icon(Icons.store),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        filled: true,
+                        fillColor: Colors.grey.shade50,
+                      ),
+                      textCapitalization: TextCapitalization.words,
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return 'Vui lòng nhập tên nhà hàng';
+                        }
+                        if (value.trim().length < 3) {
+                          return 'Tên nhà hàng phải có ít nhất 3 ký tự';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: _addressController,
+                      decoration: InputDecoration(
+                        labelText: 'Địa chỉ',
+                        hintText: 'VD: 123 Đường ABC, Quận XYZ, TP.HCM',
+                        prefixIcon: const Icon(Icons.location_on),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        filled: true,
+                        fillColor: Colors.grey.shade50,
+                      ),
+                      maxLines: 2,
+                      textCapitalization: TextCapitalization.words,
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return 'Vui lòng nhập địa chỉ';
+                        }
+                        if (value.trim().length < 10) {
+                          return 'Địa chỉ phải có ít nhất 10 ký tự';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 24),
+                    
+                    // Section: Thông tin liên hệ
+                    Container(
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      child: Row(
+                        children: [
+                          Icon(Icons.contact_phone, size: 18, color: Colors.blue.shade700),
+                          const SizedBox(width: 6),
+                          Text(
+                            'Thông tin liên hệ',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.blue.shade700,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: _phoneController,
+                      decoration: InputDecoration(
+                        labelText: 'Số điện thoại',
+                        hintText: 'VD: 0901234567',
+                        prefixIcon: const Icon(Icons.phone),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        filled: true,
+                        fillColor: Colors.grey.shade50,
+                      ),
+                      keyboardType: TextInputType.phone,
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return 'Vui lòng nhập số điện thoại';
+                        }
+                        final phoneRegex = RegExp(r'^(0|\+84)[0-9]{9,10}$');
+                        final cleanedPhone = value.replaceAll(RegExp(r'[\s\-]'), '');
+                        if (!phoneRegex.hasMatch(cleanedPhone)) {
+                          return 'Số điện thoại không hợp lệ (VD: 0901234567)';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: _emailController,
+                      decoration: InputDecoration(
+                        labelText: 'Email',
+                        hintText: 'VD: contact@restaurant.com',
+                        prefixIcon: const Icon(Icons.email),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        filled: true,
+                        fillColor: Colors.grey.shade50,
+                      ),
+                      keyboardType: TextInputType.emailAddress,
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return 'Vui lòng nhập email';
+                        }
+                        final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+                        if (!emailRegex.hasMatch(value.trim())) {
+                          return 'Email không hợp lệ (VD: email@example.com)';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 24),
+                    
+                    // Section: Thông tin khác
+                    Container(
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      child: Row(
+                        children: [
+                          Icon(Icons.more_horiz, size: 18, color: Colors.blue.shade700),
+                          const SizedBox(width: 6),
+                          Text(
+                            'Thông tin khác',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.blue.shade700,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: _openingHoursController,
+                      decoration: InputDecoration(
+                        labelText: 'Giờ mở cửa',
+                        hintText: 'VD: 8:00 - 22:00 hoặc 24/7',
+                        prefixIcon: const Icon(Icons.access_time),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        filled: true,
+                        fillColor: Colors.grey.shade50,
+                        helperText: 'Nhập giờ mở cửa của nhà hàng',
+                      ),
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return 'Vui lòng nhập giờ mở cửa';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: _capacityController,
+                      decoration: InputDecoration(
+                        labelText: 'Sức chứa',
+                        hintText: 'VD: 20',
+                        prefixIcon: const Icon(Icons.table_restaurant),
+                        suffixText: 'bàn',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        filled: true,
+                        fillColor: Colors.grey.shade50,
+                        helperText: 'Số lượng bàn có thể phục vụ',
+                      ),
+                      keyboardType: TextInputType.number,
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return 'Vui lòng nhập sức chứa';
+                        }
+                        final capacity = int.tryParse(value.trim());
+                        if (capacity == null || capacity <= 0) {
+                          return 'Sức chứa phải là số dương';
+                        }
+                        if (capacity > 1000) {
+                          return 'Sức chứa không hợp lệ (tối đa 1000 bàn)';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: _descriptionController,
+                      decoration: InputDecoration(
+                        labelText: 'Mô tả nhà hàng',
+                        hintText: 'Mô tả về nhà hàng, món ăn đặc trưng, không gian...',
+                        prefixIcon: const Icon(Icons.description),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        filled: true,
+                        fillColor: Colors.grey.shade50,
+                        helperText: 'Không bắt buộc - Giúp khách hàng hiểu thêm về nhà hàng',
+                      ),
+                      maxLines: 3,
+                      textCapitalization: TextCapitalization.sentences,
+                    ),
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.blue.shade50,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.blue.shade200),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(Icons.info_outline, size: 16, color: Colors.blue.shade700),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'Thông tin sẽ được Admin xem xét và phê duyệt',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.blue.shade900,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                // Footer với buttons
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade50,
+                    borderRadius: const BorderRadius.only(
+                      bottomLeft: Radius.circular(20),
+                      bottomRight: Radius.circular(20),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      TextButton(
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                          _selectedPackage = null;
+                        },
+                        style: TextButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                        ),
+                        child: const Text('Hủy'),
+                      ),
+                      const SizedBox(width: 12),
+                      FilledButton.icon(
+                        onPressed: () {
+                          if (_formKey.currentState!.validate()) {
+                            Navigator.of(context).pop();
+                            final restaurantInfo = {
+                              'name': _nameController.text.trim(),
+                              'address': _addressController.text.trim(),
+                              'phone': _phoneController.text.trim(),
+                              'email': _emailController.text.trim(),
+                              'description': _descriptionController.text.trim(),
+                              'openingHours': _openingHoursController.text.trim(),
+                              'capacity': int.parse(_capacityController.text.trim()),
+                            };
+                            _showPaymentDialog(package, restaurantInfo);
+                          }
+                        },
+                        icon: const Icon(Icons.arrow_forward),
+                        style: FilledButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                        ),
+                        label: const Text('Tiếp tục'),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _showPaymentDialog(ServicePackage package, Map<String, dynamic> restaurantInfo) async {
+    String selectedPaymentMethod = 'bank_transfer'; // Mặc định chuyển khoản
+    bool isProcessing = false;
+
+    if (!mounted) return;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: const Text('Thanh toán'),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Thông tin gói dịch vụ
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.blue.shade50,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: Colors.blue.shade200,
+                        width: 1,
+                      ),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          package.name,
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'Thời hạn:',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.grey.shade600,
+                              ),
+                            ),
+                            Text(
+                              '${package.durationMonths} tháng',
+                              style: const TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'Tổng tiền:',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.grey.shade600,
+                              ),
+                            ),
+                            Text(
+                              _formatCurrency(package.price),
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.green.shade700,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  const Text(
+                    'Chọn phương thức thanh toán:',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  RadioListTile<String>(
+                    title: const Text('Chuyển khoản ngân hàng'),
+                    subtitle: const Text('STK: 1234567890\nNgân hàng: Vietcombank\nChủ TK: Công ty QLNH'),
+                    value: 'bank_transfer',
+                    groupValue: selectedPaymentMethod,
+                    onChanged: (value) {
+                      setDialogState(() {
+                        selectedPaymentMethod = value!;
+                      });
+                    },
+                  ),
+                  RadioListTile<String>(
+                    title: const Text('Ví điện tử'),
+                    subtitle: const Text('MoMo, ZaloPay, VNPay'),
+                    value: 'e_wallet',
+                    groupValue: selectedPaymentMethod,
+                    onChanged: (value) {
+                      setDialogState(() {
+                        selectedPaymentMethod = value!;
+                      });
+                    },
+                  ),
+                  RadioListTile<String>(
+                    title: const Text('Tiền mặt'),
+                    subtitle: const Text('Thanh toán trực tiếp tại văn phòng'),
+                    value: 'cash',
+                    groupValue: selectedPaymentMethod,
+                    onChanged: (value) {
+                      setDialogState(() {
+                        selectedPaymentMethod = value!;
+                      });
+                    },
+                  ),
+                  if (isProcessing) ...[
+                    const SizedBox(height: 16),
+                    const Center(child: CircularProgressIndicator()),
+                    const SizedBox(height: 8),
+                    const Center(
+                      child: Text(
+                        'Đang xử lý thanh toán...',
+                        style: TextStyle(fontSize: 12, color: Colors.grey),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ),
+          actions: [
+            if (!isProcessing)
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  _selectedPackage = null;
+                },
+                child: const Text('Hủy'),
+              ),
+            FilledButton(
+              onPressed: isProcessing
+                  ? null
+                  : () async {
+                      setDialogState(() {
+                        isProcessing = true;
+                      });
+
+                      // Simulate payment processing
+                      await Future.delayed(const Duration(seconds: 2));
+
+                      if (!mounted) return;
+
+                      Navigator.of(context).pop();
+                      await _submitOwnerRequest(package, selectedPaymentMethod, restaurantInfo);
+                    },
+              child: const Text('Thanh toán'),
             ),
           ],
         ),
@@ -812,13 +1373,19 @@ class _CustomerPageState extends State<CustomerPage> {
     );
   }
 
-  Future<void> _submitOwnerRequest() async {
-    if (_selectedPackage == null) return;
-
+  Future<void> _submitOwnerRequest(ServicePackage package, String paymentMethod, Map<String, dynamic> restaurantInfo) async {
     try {
       final userId = _localStorageService.getUserId() ?? '';
       final userEmail = _localStorageService.getUserEmail() ?? '';
       final userName = _localStorageService.getUserName() ?? '';
+
+      // Lấy tên phương thức thanh toán
+      String paymentMethodName = 'Chuyển khoản ngân hàng';
+      if (paymentMethod == 'e_wallet') {
+        paymentMethodName = 'Ví điện tử';
+      } else if (paymentMethod == 'cash') {
+        paymentMethodName = 'Tiền mặt';
+      }
 
       final request = Request(
         id: DateTime.now().millisecondsSinceEpoch.toString(),
@@ -828,11 +1395,13 @@ class _CustomerPageState extends State<CustomerPage> {
         type: RequestType.owner,
         status: RequestStatus.pending,
         createdAt: DateTime.now(),
-        packageId: _selectedPackage!.id,
-        packageName: _selectedPackage!.name,
-        packagePrice: _selectedPackage!.price,
-        packageDurationMonths: _selectedPackage!.durationMonths,
-        paymentMethod: 'Chưa thanh toán', // TODO: Implement payment
+        packageId: package.id,
+        packageName: package.name,
+        packagePrice: package.price,
+        packageDurationMonths: package.durationMonths,
+        paymentMethod: paymentMethodName,
+        paymentStatus: 'paid', // Đã thanh toán
+        restaurantInfo: restaurantInfo, // Thông tin nhà hàng tạm thời
       );
 
       await _database.ref('requests/${request.id}').set(request.toJson());
@@ -915,18 +1484,34 @@ class _CustomerPageState extends State<CustomerPage> {
         ownerId: ownerId,
       );
 
-      await _database.ref('requests/${request.id}').set(request.toJson());
+      // Tạo request
+      try {
+        await _database.ref('requests/${request.id}').set(request.toJson());
+        print('Request created successfully: ${request.id}');
+      } catch (e) {
+        print('Error creating request: $e');
+        throw Exception('Không thể tạo yêu cầu: $e');
+      }
 
-      // Gửi thông báo cho owner
-      await _database.ref('notifications').push().set({
-        'userId': ownerId,
-        'title': 'Yêu cầu đăng ký Nhân viên mới',
-        'message': '$userName muốn đăng ký làm ${role == UserRole.order ? "Nhân viên Order" : "Nhân viên Bếp"} tại $restaurantName',
-        'type': 'staff_request',
-        'requestId': request.id,
-        'timestamp': DateTime.now().toIso8601String(),
-        'read': false,
-      });
+      // Gửi thông báo cho Owner của nhà hàng (KHÔNG gửi cho Admin)
+      // Owner sẽ phê duyệt yêu cầu đăng ký nhân viên cho nhà hàng của họ
+      if (ownerId.isNotEmpty) {
+        try {
+          await _database.ref('notifications').push().set({
+            'userId': ownerId, // Gửi cho Owner, không phải Admin
+            'title': 'Yêu cầu đăng ký Nhân viên mới',
+            'message': '$userName muốn đăng ký làm ${role == UserRole.order ? "Nhân viên Order" : "Nhân viên Bếp"} tại $restaurantName',
+            'type': 'staff_request',
+            'requestId': request.id,
+            'timestamp': DateTime.now().toIso8601String(),
+            'read': false,
+          });
+          print('Notification sent to owner: $ownerId');
+        } catch (e) {
+          print('Error sending notification (non-critical): $e');
+          // Không throw error vì request đã được tạo thành công
+        }
+      }
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

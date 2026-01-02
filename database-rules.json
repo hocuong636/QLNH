@@ -92,10 +92,10 @@
       ".write": "auth != null && (auth.uid == 'admin' || root.child('users').child(auth.uid).child('role').val() == 'admin')"
     },
     
-    // Notifications - users can read their own, admin can read all
+    // Notifications - users can read their own, admin and owners can write
     "notifications": {
       ".read": "auth != null",
-      ".write": "auth != null && (auth.uid == 'admin' || root.child('users').child(auth.uid).child('role').val() == 'admin')",
+      ".write": "auth != null && (auth.uid == 'admin' || root.child('users').child(auth.uid).child('role').val() == 'admin' || root.child('users').child(auth.uid).child('role').val() == 'OWNER')",
       "$notificationId": {
         ".read": "auth != null && (auth.uid == 'admin' || root.child('users').child(auth.uid).child('role').val() == 'admin' || data.child('userId').val() == auth.uid)"
       }
@@ -104,10 +104,9 @@
     // Requests - users can create their own, admin can read/update all, owners can read/update their restaurant's staff requests
     "requests": {
       ".read": "auth != null && (auth.uid == 'admin' || root.child('users').child(auth.uid).child('role').val() == 'admin' || root.child('users').child(auth.uid).child('role').val() == 'OWNER')",
-      ".write": "auth != null",
       "$requestId": {
-        ".read": "auth != null && (auth.uid == 'admin' || root.child('users').child(auth.uid).child('role').val() == 'admin' || data.child('userId').val() == auth.uid || (root.child('users').child(auth.uid).child('role').val() == 'OWNER' && data.child('ownerId').val() == auth.uid))",
-        ".write": "auth != null && (auth.uid == 'admin' || root.child('users').child(auth.uid).child('role').val() == 'admin' || data.child('userId').val() == auth.uid || (root.child('users').child(auth.uid).child('role').val() == 'OWNER' && data.child('ownerId').val() == auth.uid))"
+        ".read": "auth != null && (auth.uid == 'admin' || root.child('users').child(auth.uid).child('role').val() == 'admin' || (data.exists() && data.child('userId').val() == auth.uid) || (data.exists() && root.child('users').child(auth.uid).child('role').val() == 'OWNER' && data.child('ownerId').val() == auth.uid))",
+        ".write": "auth != null && (auth.uid == 'admin' || root.child('users').child(auth.uid).child('role').val() == 'admin' || (!data.exists() && newData.child('userId').val() == auth.uid) || (data.exists() && data.child('userId').val() == auth.uid) || (data.exists() && root.child('users').child(auth.uid).child('role').val() == 'OWNER' && data.child('ownerId').val() == auth.uid))"
       }
     }
   }

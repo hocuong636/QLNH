@@ -129,10 +129,10 @@ class _AdminPageState extends State<AdminPage> {
               children: const [
                 Text(
                   'Xin chào, Admin 👋',
-                  style: TextStyle(
+              style: TextStyle(
                     fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFF1A1A1A),
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF1A1A1A),
                   ),
                 ),
                 SizedBox(height: 2),
@@ -142,7 +142,7 @@ class _AdminPageState extends State<AdminPage> {
                     fontSize: 12,
                     color: Color(0xFF8E8E93),
                   ),
-                ),
+              ),
               ],
             ),
           ],
@@ -183,37 +183,37 @@ class _AdminPageState extends State<AdminPage> {
       ),
       child: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(24, 24, 24, 24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
 
-            const Text(
+          const Text(
               'Thống kê nhanh',
-              style: TextStyle(
+            style: TextStyle(
                 fontSize: 18,
-                fontWeight: FontWeight.w600,
+              fontWeight: FontWeight.w600,
                 color: Color(0xFF1A1A1A),
-              ),
             ),
+          ),
 
             const SizedBox(height: 16),
 
-            _buildStatCard(
-              title: 'Tổng Người Dùng',
+          _buildStatCard(
+            title: 'Tổng Người Dùng',
               subtitle: 'Tất cả tài khoản trong hệ thống',
-              icon: Icons.people_outline,
+            icon: Icons.people_outline,
               color: const Color(0xFF3498DB),
-              stream: _dbRef.child('users').onValue,
-            ),
+            stream: _dbRef.child('users').onValue,
+          ),
 
             const SizedBox(height: 14),
 
-            _buildStatCard(
+          _buildStatCard(
               title: 'Tổng Nhà Hàng',
               subtitle: 'Bao gồm mọi trạng thái',
               icon: Icons.store_mall_directory_outlined,
               color: const Color(0xFF9B59B6),
-              stream: _dbRef.child('restaurants').onValue,
+            stream: _dbRef.child('restaurants').onValue,
             ),
 
             const SizedBox(height: 24),
@@ -225,9 +225,9 @@ class _AdminPageState extends State<AdminPage> {
                 fontWeight: FontWeight.w600,
                 color: Color(0xFF1A1A1A),
               ),
-            ),
+          ),
 
-            const SizedBox(height: 16),
+          const SizedBox(height: 16),
 
             Row(
               children: [
@@ -297,6 +297,30 @@ class _AdminPageState extends State<AdminPage> {
               ],
             ),
 
+            const SizedBox(height: 12),
+
+            Row(
+              children: [
+                Expanded(
+                  child: _buildQuickActionCard(
+                    title: 'Gói dịch vụ',
+                    icon: Icons.card_giftcard,
+                    color: const Color(0xFFE67E22),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const ServicePackageManagementPage(),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                const SizedBox(width: 12),
+                const Expanded(child: SizedBox()), // Placeholder để giữ layout
+              ],
+            ),
+
             const SizedBox(height: 8),
           ],
         ),
@@ -335,7 +359,7 @@ class _AdminPageState extends State<AdminPage> {
                 decoration: BoxDecoration(
                   color: color.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(12),
-                ),
+          ),
                 child: Icon(icon, color: color, size: 24),
               ),
               const SizedBox(height: 12),
@@ -350,7 +374,7 @@ class _AdminPageState extends State<AdminPage> {
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
               ),
-            ],
+        ],
           ),
         ),
       ),
