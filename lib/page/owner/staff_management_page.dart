@@ -3,6 +3,7 @@ import 'package:firebase_database/firebase_database.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:quanlynhahang/constants/user_roles.dart';
 import 'package:quanlynhahang/services/local_storage_service.dart';
+import 'package:quanlynhahang/models/request.dart';
 
 class StaffManagementPage extends StatefulWidget {
   const StaffManagementPage({super.key});
@@ -11,16 +12,43 @@ class StaffManagementPage extends StatefulWidget {
   State<StaffManagementPage> createState() => _StaffManagementPageState();
 }
 
-class _StaffManagementPageState extends State<StaffManagementPage> {
+class _StaffManagementPageState extends State<StaffManagementPage> with SingleTickerProviderStateMixin {
   List<Map<String, dynamic>> _allUsers = [];
   List<Map<String, dynamic>> _myStaff = [];
+  List<Request> _pendingRequests = [];
   bool _isLoading = true;
   String? _myRestaurantId;
+  String? _currentOwnerId;
+  late TabController _tabController;
 
   @override
   void initState() {
     super.initState();
-    _loadData();
+    _tabController = TabController(length: 2, vsync: this);
+    _tabController.addListener(() {
+      if (!_tabController.indexIsChanging) {
+        setState(() {});
+      }
+    });
+    _loadCurrentUserInfo();
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadCurrentUserInfo() async {
+    try {
+      final localStorageService = LocalStorageService();
+      final userId = localStorageService.getUserId();
+      _currentOwnerId = userId;
+      await _loadData();
+      await _loadPendingRequests();
+    } catch (e) {
+      print('Error loading user info: $e');
+    }
   }
 
   Future<void> _loadData() async {
@@ -123,6 +151,7 @@ class _StaffManagementPageState extends State<StaffManagementPage> {
       });
 
       await _loadData();
+      await _loadPendingRequests();
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -223,6 +252,7 @@ class _StaffManagementPageState extends State<StaffManagementPage> {
       });
 
       await _loadData();
+      await _loadPendingRequests();
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -235,6 +265,161 @@ class _StaffManagementPageState extends State<StaffManagementPage> {
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text('Lỗi xóa nhân viên: $e')));
+      }
+    }
+  }
+
+  Future<void> _loadPendingRequests() async {
+    if (_myRestaurantId == null || _currentOwnerId == null) return;
+
+    try {
+      final database = FirebaseDatabase.instance;
+      final snapshot = await database.ref('requests').get();
+      final requests = <Request>[];
+
+      if (snapshot.exists && snapshot.value != null) {
+        final data = snapshot.value as Map<dynamic, dynamic>;
+        data.forEach((key, value) {
+          if (value is Map) {
+            try {
+              final request = Request.fromJson({
+                'id': key.toString(),
+                ...Map<String, dynamic>.from(value),
+              });
+              // Chỉ lấy yêu cầu nhân viên (staff) thuộc về nhà hàng của owner này và đang chờ duyệt
+              if (request.type == RequestType.staff &&
+                  request.ownerId == _currentOwnerId &&
+                  request.restaurantId == _myRestaurantId &&
+                  request.status == RequestStatus.pending) {
+                requests.add(request);
+              }
+            } catch (e) {
+              print('Error parsing request $key: $e');
+            }
+          }
+        });
+      }
+
+      // Sắp xếp theo thời gian tạo (mới nhất trước)
+      requests.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+
+      setState(() {
+        _pendingRequests = requests;
+      });
+    } catch (e) {
+      print('Error loading pending requests: $e');
+    }
+  }
+
+  Future<void> _approveStaffRequest(Request request) async {
+    try {
+      final database = FirebaseDatabase.instance;
+
+      // Cập nhật trạng thái yêu cầu
+      await database.ref('requests/${request.id}').update({
+        'status': 'approved',
+        'updatedAt': DateTime.now().toIso8601String(),
+      });
+
+      // Cập nhật role và restaurantID của user
+      await database.ref('users/${request.userId}').update({
+        'role': request.requestedRole,
+        'restaurantID': request.restaurantId,
+        'updatedAt': DateTime.now().toIso8601String(),
+      });
+
+      // Gửi thông báo cho user
+      await database.ref('notifications').push().set({
+        'userId': request.userId,
+        'title': 'Yêu cầu đăng ký Nhân viên đã được phê duyệt',
+        'message': 'Yêu cầu đăng ký làm ${request.requestedRole == UserRole.order ? "Nhân viên Order" : "Nhân viên Bếp"} tại ${request.restaurantName} đã được Owner phê duyệt. Bạn có thể đăng nhập lại để sử dụng tài khoản.',
+        'type': 'request_approved',
+        'requestId': request.id,
+        'timestamp': DateTime.now().toIso8601String(),
+        'read': false,
+      });
+
+      // Reload data
+      await _loadData();
+      await _loadPendingRequests();
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Đã phê duyệt yêu cầu thành công'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      print('Error approving staff request: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Lỗi phê duyệt yêu cầu: $e')),
+        );
+      }
+    }
+  }
+
+  Future<void> _rejectStaffRequest(Request request) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Xác nhận từ chối'),
+        content: Text('Bạn có chắc muốn từ chối yêu cầu của ${request.userName}?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Hủy'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            child: const Text('Từ chối'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
+    try {
+      final database = FirebaseDatabase.instance;
+
+      // Cập nhật trạng thái yêu cầu
+      await database.ref('requests/${request.id}').update({
+        'status': 'rejected',
+        'updatedAt': DateTime.now().toIso8601String(),
+      });
+
+      // Gửi thông báo cho user
+      await database.ref('notifications').push().set({
+        'userId': request.userId,
+        'title': 'Yêu cầu đăng ký Nhân viên đã bị từ chối',
+        'message': 'Yêu cầu đăng ký làm ${request.requestedRole == UserRole.order ? "Nhân viên Order" : "Nhân viên Bếp"} tại ${request.restaurantName} đã bị Owner từ chối. Vui lòng liên hệ Owner để biết thêm chi tiết.',
+        'type': 'request_rejected',
+        'requestId': request.id,
+        'timestamp': DateTime.now().toIso8601String(),
+        'read': false,
+      });
+
+      // Reload data
+      await _loadPendingRequests();
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Đã từ chối yêu cầu'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+      }
+    } catch (e) {
+      print('Error rejecting staff request: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Lỗi từ chối yêu cầu: $e')),
+        );
       }
     }
   }
@@ -347,17 +532,71 @@ class _StaffManagementPageState extends State<StaffManagementPage> {
         foregroundColor: Colors.black87,
         elevation: 0,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.person_add),
-            onPressed: _showAvailableStaff,
-            tooltip: 'Thêm nhân viên',
-          ),
+          if (_tabController.index == 0)
+            IconButton(
+              icon: const Icon(Icons.person_add),
+              onPressed: _showAvailableStaff,
+              tooltip: 'Thêm nhân viên',
+            ),
           IconButton(
             icon: const Icon(Icons.refresh),
-            onPressed: _loadData,
+            onPressed: () {
+              _loadData();
+              _loadPendingRequests();
+            },
             tooltip: 'Làm mới',
           ),
         ],
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(48),
+          child: Container(
+            color: Colors.white,
+            child: TabBar(
+              controller: _tabController,
+              labelColor: Theme.of(context).primaryColor,
+              unselectedLabelColor: Colors.grey,
+              tabs: [
+                Tab(
+                  icon: const Icon(Icons.people),
+                  text: 'Nhân viên (${_myStaff.length})',
+                ),
+                Tab(
+                  icon: Stack(
+                    children: [
+                      const Icon(Icons.request_quote),
+                      if (_pendingRequests.isNotEmpty)
+                        Positioned(
+                          right: 0,
+                          top: 0,
+                          child: Container(
+                            padding: const EdgeInsets.all(4),
+                            decoration: const BoxDecoration(
+                              color: Colors.red,
+                              shape: BoxShape.circle,
+                            ),
+                            constraints: const BoxConstraints(
+                              minWidth: 16,
+                              minHeight: 16,
+                            ),
+                            child: Text(
+                              '${_pendingRequests.length}',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                  text: 'Yêu cầu (${_pendingRequests.length})',
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -384,90 +623,242 @@ class _StaffManagementPageState extends State<StaffManagementPage> {
                 ],
               ),
             )
-          : _myStaff.isEmpty
-          ? Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.people_outline,
-                    size: 80,
-                    color: Colors.grey.shade400,
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Chưa có nhân viên nào',
-                    style: TextStyle(fontSize: 18, color: Colors.grey.shade600),
-                  ),
-                  const SizedBox(height: 16),
-                  ElevatedButton.icon(
-                    onPressed: _showAvailableStaff,
-                    icon: const Icon(Icons.person_add),
-                    label: const Text('Thêm nhân viên'),
-                  ),
-                ],
-              ),
-            )
-          : ListView.builder(
-              padding: const EdgeInsets.all(16),
-              itemCount: _myStaff.length,
-              itemBuilder: (context, index) {
-                final staff = _myStaff[index];
-                final isActive = staff['isActive'] ?? true;
+          : _tabController.index == 0
+          ? _buildStaffList()
+          : _buildPendingRequestsList(),
+    );
+  }
 
-                return Card(
-                  margin: const EdgeInsets.only(bottom: 12),
-                  child: ListTile(
-                    leading: CircleAvatar(
-                      backgroundColor: staff['role'] == UserRole.kitchen
-                          ? Colors.orange.shade100
-                          : Colors.blue.shade100,
-                      child: Icon(
-                        staff['role'] == UserRole.kitchen
-                            ? Icons.restaurant
-                            : Icons.shopping_cart,
-                        color: staff['role'] == UserRole.kitchen
-                            ? Colors.orange
-                            : Colors.blue,
-                      ),
+  Widget _buildStaffList() {
+    if (_myStaff.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.people_outline,
+              size: 80,
+              color: Colors.grey.shade400,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Chưa có nhân viên nào',
+              style: TextStyle(fontSize: 18, color: Colors.grey.shade600),
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton.icon(
+              onPressed: _showAvailableStaff,
+              icon: const Icon(Icons.person_add),
+              label: const Text('Thêm nhân viên'),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: _myStaff.length,
+      itemBuilder: (context, index) {
+        final staff = _myStaff[index];
+        final isActive = staff['isActive'] ?? true;
+
+        return Card(
+          margin: const EdgeInsets.only(bottom: 12),
+          child: ListTile(
+            leading: CircleAvatar(
+              backgroundColor: staff['role'] == UserRole.kitchen
+                  ? Colors.orange.shade100
+                  : Colors.blue.shade100,
+              child: Icon(
+                staff['role'] == UserRole.kitchen
+                    ? Icons.restaurant
+                    : Icons.shopping_cart,
+                color: staff['role'] == UserRole.kitchen
+                    ? Colors.orange
+                    : Colors.blue,
+              ),
+            ),
+            title: Text(
+              staff['fullName'] ?? staff['name'] ?? 'Không có tên',
+              style: const TextStyle(fontWeight: FontWeight.w500),
+            ),
+            subtitle: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(staff['email'] ?? ''),
+                Text(
+                  'SĐT: ${staff['phoneNumber'] ?? staff['phone'] ?? 'Chưa cập nhật'}',
+                  style: TextStyle(color: Colors.grey.shade600),
+                ),
+                Text(
+                  UserRole.getDisplayName(staff['role']),
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                Text(
+                  'Trạng thái: ${isActive ? 'Hoạt động' : 'Đã khóa'}',
+                  style: TextStyle(
+                    color: isActive ? Colors.green : Colors.red,
+                    fontSize: 12,
+                  ),
+                ),
+              ],
+            ),
+            trailing: IconButton(
+              icon: const Icon(Icons.remove_circle, color: Colors.red),
+              onPressed: () => _removeStaffFromRestaurant(staff['id']),
+              tooltip: 'Xóa khỏi nhà hàng',
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildPendingRequestsList() {
+    if (_pendingRequests.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.check_circle_outline,
+              size: 80,
+              color: Colors.grey.shade400,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Không có yêu cầu nào chờ phê duyệt',
+              style: TextStyle(fontSize: 18, color: Colors.grey.shade600),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: _pendingRequests.length,
+      itemBuilder: (context, index) {
+        final request = _pendingRequests[index];
+
+        return Card(
+          margin: const EdgeInsets.only(bottom: 12),
+          elevation: 2,
+          child: ExpansionTile(
+            leading: CircleAvatar(
+              backgroundColor: request.requestedRole == UserRole.kitchen
+                  ? Colors.orange.shade100
+                  : Colors.blue.shade100,
+              child: Icon(
+                request.requestedRole == UserRole.kitchen
+                    ? Icons.restaurant
+                    : Icons.shopping_cart,
+                color: request.requestedRole == UserRole.kitchen
+                    ? Colors.orange
+                    : Colors.blue,
+              ),
+            ),
+            title: Text(
+              request.userName,
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+            subtitle: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(request.userEmail),
+                const SizedBox(height: 4),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.orange.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    'Chờ phê duyệt',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.orange.shade700,
+                      fontWeight: FontWeight.w600,
                     ),
-                    title: Text(
-                      staff['fullName'] ?? staff['name'] ?? 'Không có tên',
-                      style: const TextStyle(fontWeight: FontWeight.w500),
+                  ),
+                ),
+              ],
+            ),
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildInfoRow('Email', request.userEmail),
+                    _buildInfoRow('Vai trò yêu cầu', 
+                      request.requestedRole == UserRole.order 
+                          ? 'Nhân viên Order' 
+                          : 'Nhân viên Bếp'),
+                    _buildInfoRow('Nhà hàng', request.restaurantName ?? ''),
+                    _buildInfoRow(
+                      'Ngày gửi',
+                      '${request.createdAt.day}/${request.createdAt.month}/${request.createdAt.year} ${request.createdAt.hour}:${request.createdAt.minute.toString().padLeft(2, '0')}',
                     ),
-                    subtitle: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                    const SizedBox(height: 16),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
                       children: [
-                        Text(staff['email'] ?? ''),
-                        Text(
-                          'SĐT: ${staff['phoneNumber'] ?? staff['phone'] ?? 'Chưa cập nhật'}',
-                          style: TextStyle(color: Colors.grey.shade600),
-                        ),
-                        Text(
-                          UserRole.getDisplayName(staff['role']),
-                          style: const TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
+                        TextButton(
+                          onPressed: () => _rejectStaffRequest(request),
+                          style: TextButton.styleFrom(
+                            foregroundColor: Colors.red,
                           ),
+                          child: const Text('Từ chối'),
                         ),
-                        Text(
-                          'Trạng thái: ${isActive ? 'Hoạt động' : 'Đã khóa'}',
-                          style: TextStyle(
-                            color: isActive ? Colors.green : Colors.red,
-                            fontSize: 12,
+                        const SizedBox(width: 8),
+                        FilledButton(
+                          onPressed: () => _approveStaffRequest(request),
+                          style: FilledButton.styleFrom(
+                            backgroundColor: Colors.green,
                           ),
+                          child: const Text('Phê duyệt'),
                         ),
                       ],
                     ),
-                    trailing: IconButton(
-                      icon: const Icon(Icons.remove_circle, color: Colors.red),
-                      onPressed: () => _removeStaffFromRestaurant(staff['id']),
-                      tooltip: 'Xóa khỏi nhà hàng',
-                    ),
-                  ),
-                );
-              },
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildInfoRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 120,
+            child: Text(
+              '$label:',
+              style: TextStyle(
+                fontWeight: FontWeight.w600,
+                color: Colors.grey.shade700,
+              ),
             ),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: const TextStyle(color: Colors.black87),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

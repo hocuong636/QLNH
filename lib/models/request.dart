@@ -20,6 +20,9 @@ class Request {
   final String? paymentMethod;
   final String? paymentStatus; // 'pending', 'paid', 'failed'
   
+  // Thông tin nhà hàng tạm thời (chưa tạo, chờ phê duyệt)
+  final Map<String, dynamic>? restaurantInfo; // Lưu thông tin nhà hàng: name, address, phone, email, description, openingHours, capacity
+  
   // Cho Staff request
   final String? restaurantId;
   final String? restaurantName;
@@ -41,6 +44,7 @@ class Request {
     this.packageDurationMonths,
     this.paymentMethod,
     this.paymentStatus,
+    this.restaurantInfo,
     this.restaurantId,
     this.restaurantName,
     this.requestedRole,
@@ -75,6 +79,9 @@ class Request {
               : null),
       paymentMethod: json['paymentMethod'],
       paymentStatus: json['paymentStatus'],
+      restaurantInfo: json['restaurantInfo'] is Map 
+          ? Map<String, dynamic>.from(json['restaurantInfo']) 
+          : null,
       restaurantId: json['restaurantId'],
       restaurantName: json['restaurantName'],
       requestedRole: json['requestedRole'],
@@ -122,6 +129,7 @@ class Request {
       'packageDurationMonths': packageDurationMonths,
       'paymentMethod': paymentMethod,
       'paymentStatus': paymentStatus,
+      'restaurantInfo': restaurantInfo,
       'restaurantId': restaurantId,
       'restaurantName': restaurantName,
       'requestedRole': requestedRole,
@@ -164,6 +172,7 @@ class Request {
       packageDurationMonths: packageDurationMonths ?? this.packageDurationMonths,
       paymentMethod: paymentMethod ?? this.paymentMethod,
       paymentStatus: paymentStatus ?? this.paymentStatus,
+      restaurantInfo: restaurantInfo ?? this.restaurantInfo,
       restaurantId: restaurantId ?? this.restaurantId,
       restaurantName: restaurantName ?? this.restaurantName,
       requestedRole: requestedRole ?? this.requestedRole,

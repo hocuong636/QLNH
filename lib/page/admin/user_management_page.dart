@@ -16,8 +16,7 @@ class _UserManagementPageState extends State<UserManagementPage> {
   List<UserModel> _filteredUsers = [];
   bool _isLoading = true;
   String _searchQuery = '';
-  String? _selectedRoleFilter;
-  String? _selectedStatusFilter;
+  String _selectedStatusFilter = 'all';
 
   @override
   void initState() {
@@ -82,13 +81,8 @@ class _UserManagementPageState extends State<UserManagementPage> {
       }).toList();
     }
 
-    // Filter by role
-    if (_selectedRoleFilter != null && _selectedRoleFilter!.isNotEmpty) {
-      filtered = filtered.where((user) => user.role == _selectedRoleFilter).toList();
-    }
-
     // Filter by status
-    if (_selectedStatusFilter != null && _selectedStatusFilter!.isNotEmpty) {
+    if (_selectedStatusFilter != 'all') {
       if (_selectedStatusFilter == 'active') {
         filtered = filtered.where((user) => user.isActive).toList();
       } else if (_selectedStatusFilter == 'inactive') {
@@ -151,24 +145,60 @@ class _UserManagementPageState extends State<UserManagementPage> {
   }
 
   void _showUserDetails(UserModel user) {
+    const Color primaryGreen = Color(0xFF4CAF50);
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(user.fullName),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: primaryGreen.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(
+                Icons.person_rounded,
+                color: primaryGreen,
+                size: 24,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                user.fullName,
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF1A1A1A),
+                ),
+              ),
+            ),
+          ],
+        ),
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildDetailRow('Email', user.email),
-              _buildDetailRow('Số điện thoại', user.phoneNumber),
-              _buildDetailRow('Vai trò', _getRoleDisplayName(user.role)),
-              _buildDetailRow('Trạng thái', user.isActive ? 'Hoạt động' : 'Đã khóa'),
+              _buildDetailRow(Icons.email_rounded, 'Email', user.email),
+              _buildDetailRow(Icons.phone_rounded, 'Số điện thoại', user.phoneNumber),
+              if (user.role == UserRole.admin)
+                _buildDetailRow(Icons.admin_panel_settings_rounded, 'Vai trò', _getRoleDisplayName(user.role)),
+              _buildDetailRow(
+                user.isActive ? Icons.check_circle_rounded : Icons.block_rounded,
+                'Trạng thái',
+                user.isActive ? 'Hoạt động' : 'Đã khóa',
+                color: user.isActive ? primaryGreen : Colors.red,
+              ),
               if (user.restaurantID != null)
-                _buildDetailRow('Nhà hàng ID', user.restaurantID!),
-              _buildDetailRow('Ngày tạo', _formatDate(user.createdAt)),
+                _buildDetailRow(Icons.restaurant_rounded, 'Nhà hàng ID', user.restaurantID!),
+              _buildDetailRow(Icons.calendar_today_rounded, 'Ngày tạo', _formatDate(user.createdAt)),
               if (user.updatedAt != null)
-                _buildDetailRow('Cập nhật lần cuối', _formatDate(user.updatedAt!)),
+                _buildDetailRow(Icons.update_rounded, 'Cập nhật lần cuối', _formatDate(user.updatedAt!)),
             ],
           ),
         ),
@@ -178,36 +208,66 @@ class _UserManagementPageState extends State<UserManagementPage> {
             child: const Text('Đóng'),
           ),
           if (user.role != UserRole.admin)
-            TextButton(
+            FilledButton.icon(
               onPressed: () {
                 Navigator.of(context).pop();
                 _resetPassword(user.email);
               },
-              child: const Text('Reset mật khẩu'),
+              icon: const Icon(Icons.lock_reset_rounded, size: 18),
+              label: const Text('Reset mật khẩu'),
+              style: FilledButton.styleFrom(
+                backgroundColor: primaryGreen,
+                foregroundColor: Colors.white,
+              ),
             ),
         ],
       ),
     );
   }
 
-  Widget _buildDetailRow(String label, String value) {
+  Widget _buildDetailRow(IconData icon, String label, String value, {Color? color}) {
+    const Color primaryGreen = Color(0xFF4CAF50);
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.only(bottom: 16),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SizedBox(
-            width: 100,
-            child: Text(
-              '$label:',
-              style: TextStyle(
-                fontWeight: FontWeight.w600,
-                color: Colors.grey.shade700,
-              ),
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: (color ?? primaryGreen).withOpacity(0.1),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(
+              icon,
+              size: 20,
+              color: color ?? primaryGreen,
             ),
           ),
+          const SizedBox(width: 12),
           Expanded(
-            child: Text(value),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.grey.shade600,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  value,
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF1A1A1A),
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -248,34 +308,91 @@ class _UserManagementPageState extends State<UserManagementPage> {
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF5FAFF),
-      appBar: AppBar(
-        title: const Text(
-          'Quản lý Người dùng',
-          overflow: TextOverflow.ellipsis,
-        ),
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black87,
-        elevation: 0,
-        centerTitle: false,
-        titleSpacing: 16,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _loadUsers,
-            tooltip: 'Làm mới',
-          ),
-        ],
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(120),
-          child: Container(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-            child: Column(
+  Widget _buildFilterChip(String value, String label, IconData icon) {
+    final isSelected = _selectedStatusFilter == value;
+    const Color primaryGreen = Color(0xFF4CAF50);
+    return Expanded(
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () {
+            setState(() {
+              _selectedStatusFilter = value;
+              _applyFilters();
+            });
+          },
+          borderRadius: BorderRadius.circular(12),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+            decoration: BoxDecoration(
+              color: isSelected ? Colors.white : Colors.transparent,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: isSelected ? primaryGreen.withOpacity(0.3) : Colors.grey.shade300,
+                width: isSelected ? 1.5 : 1,
+              ),
+              boxShadow: isSelected
+                  ? [
+                      BoxShadow(
+                        color: primaryGreen.withOpacity(0.1),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ]
+                  : null,
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
               mainAxisSize: MainAxisSize.min,
               children: [
+                Icon(
+                  icon,
+                  size: 16,
+                  color: isSelected ? primaryGreen : Colors.grey.shade600,
+                ),
+                const SizedBox(width: 6),
+                Flexible(
+                  child: Text(
+                    label,
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                      color: isSelected ? primaryGreen : Colors.grey.shade700,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    const Color primaryGreen = Color(0xFF4CAF50);
+    return Column(
+        children: [
+          // Header section với title lớn
+          Container(
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
+            color: Colors.white,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Quản lý Người dùng',
+                  style: TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF1A1A1A),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                // Search và filter section
                 TextField(
                   onChanged: (value) {
                     setState(() {
@@ -285,77 +402,43 @@ class _UserManagementPageState extends State<UserManagementPage> {
                   },
                   decoration: InputDecoration(
                     hintText: 'Tìm kiếm theo tên, email, SĐT...',
-                    prefixIcon: const Icon(Icons.search),
+                    prefixIcon: Icon(Icons.search_rounded, color: Colors.grey.shade600),
                     filled: true,
-                    fillColor: Colors.grey.shade100,
+                    fillColor: Colors.grey.shade50,
                     border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide.none,
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: BorderSide(color: Colors.grey.shade200),
                     ),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: BorderSide(color: Colors.grey.shade200),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: const BorderSide(color: primaryGreen, width: 2),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                   ),
                 ),
                 const SizedBox(height: 12),
                 Row(
-                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    Flexible(
-                      flex: 1,
-                      child: DropdownButtonFormField<String>(
-                        value: _selectedRoleFilter,
-                        isExpanded: true,
-                        decoration: InputDecoration(
-                          hintText: 'Tất cả vai trò',
-                          filled: true,
-                          fillColor: Colors.grey.shade100,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide.none,
-                          ),
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                        ),
-                        items: [
-                          const DropdownMenuItem(value: null, child: Text('Tất cả vai trò', overflow: TextOverflow.ellipsis)),
-                          DropdownMenuItem(value: UserRole.admin, child: Text(_getRoleDisplayName(UserRole.admin), overflow: TextOverflow.ellipsis)),
-                          DropdownMenuItem(value: UserRole.owner, child: Text(_getRoleDisplayName(UserRole.owner), overflow: TextOverflow.ellipsis)),
-                          DropdownMenuItem(value: UserRole.kitchen, child: Text(_getRoleDisplayName(UserRole.kitchen), overflow: TextOverflow.ellipsis)),
-                          DropdownMenuItem(value: UserRole.order, child: Text(_getRoleDisplayName(UserRole.order), overflow: TextOverflow.ellipsis)),
-                        ],
-                        onChanged: (value) {
-                          setState(() {
-                            _selectedRoleFilter = value;
-                            _applyFilters();
-                          });
-                        },
+                    _buildFilterChip('all', 'Tất cả', Icons.filter_list_rounded),
+                    const SizedBox(width: 8),
+                    _buildFilterChip('active', 'Hoạt động', Icons.check_circle_rounded),
+                    const SizedBox(width: 8),
+                    _buildFilterChip('inactive', 'Đã khóa', Icons.block_rounded),
+                    const Spacer(),
+                    Container(
+                      decoration: BoxDecoration(
+                        color: primaryGreen.withOpacity(0.1),
+                        shape: BoxShape.circle,
                       ),
-                    ),
-                    const SizedBox(width: 12),
-                    Flexible(
-                      flex: 1,
-                      child: DropdownButtonFormField<String>(
-                        value: _selectedStatusFilter,
-                        isExpanded: true,
-                        decoration: InputDecoration(
-                          hintText: 'Tất cả trạng thái',
-                          filled: true,
-                          fillColor: Colors.grey.shade100,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide.none,
-                          ),
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                        ),
-                        items: const [
-                          DropdownMenuItem(value: null, child: Text('Tất cả trạng thái', overflow: TextOverflow.ellipsis)),
-                          DropdownMenuItem(value: 'active', child: Text('Hoạt động', overflow: TextOverflow.ellipsis)),
-                          DropdownMenuItem(value: 'inactive', child: Text('Đã khóa', overflow: TextOverflow.ellipsis)),
-                        ],
-                        onChanged: (value) {
-                          setState(() {
-                            _selectedStatusFilter = value;
-                            _applyFilters();
-                          });
-                        },
+                      child: IconButton(
+                        icon: const Icon(Icons.refresh_rounded),
+                        onPressed: _loadUsers,
+                        tooltip: 'Làm mới',
+                        color: primaryGreen,
                       ),
                     ),
                   ],
@@ -363,26 +446,51 @@ class _UserManagementPageState extends State<UserManagementPage> {
               ],
             ),
           ),
-        ),
-      ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
+          // Body content
+          Expanded(
+            child: _isLoading
+          ? Center(
+              child: CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(primaryGreen),
+              ),
+            )
           : _filteredUsers.isEmpty
               ? Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(
-                        Icons.people_outline,
-                        size: 80,
-                        color: Colors.grey.shade400,
+                      Container(
+                        padding: const EdgeInsets.all(24),
+                        decoration: BoxDecoration(
+                          color: primaryGreen.withOpacity(0.1),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          Icons.people_outline_rounded,
+                          size: 64,
+                          color: primaryGreen,
+                        ),
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 24),
                       Text(
                         _searchQuery.isEmpty
                             ? 'Chưa có người dùng nào'
                             : 'Không tìm thấy người dùng',
-                        style: TextStyle(fontSize: 18, color: Colors.grey.shade600),
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF1A1A1A),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        _searchQuery.isEmpty
+                            ? 'Hãy thêm người dùng mới vào hệ thống'
+                            : 'Thử tìm kiếm với từ khóa khác',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey.shade600,
+                        ),
                       ),
                     ],
                   ),
@@ -392,100 +500,166 @@ class _UserManagementPageState extends State<UserManagementPage> {
                   itemCount: _filteredUsers.length,
                   itemBuilder: (context, index) {
                     final user = _filteredUsers[index];
-                    return Card(
+                    return Container(
                       margin: const EdgeInsets.only(bottom: 12),
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
                         borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: ListTile(
-                        contentPadding: const EdgeInsets.all(16),
-                        leading: CircleAvatar(
-                          backgroundColor: _getRoleColor(user.role).withOpacity(0.1),
-                          child: Icon(
-                            Icons.person,
-                            color: _getRoleColor(user.role),
+                        border: Border.all(
+                          color: Colors.grey.shade200,
+                          width: 1,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.04),
+                            blurRadius: 10,
+                            offset: const Offset(0, 2),
                           ),
-                        ),
-                        title: Text(
-                          user.fullName,
-                          style: const TextStyle(fontWeight: FontWeight.w600),
-                        ),
-                        subtitle: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const SizedBox(height: 4),
-                            Text(user.email),
-                            const SizedBox(height: 4),
-                            Wrap(
-                              spacing: 8,
-                              runSpacing: 4,
+                        ],
+                      ),
+                      child: Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          onTap: () => _showUserDetails(user),
+                          borderRadius: BorderRadius.circular(16),
+                          child: Padding(
+                            padding: const EdgeInsets.all(16),
+                            child: Row(
                               children: [
-                                // Chỉ hiển thị role badge cho admin
-                                if (user.role == UserRole.admin)
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                    decoration: BoxDecoration(
-                                      color: _getRoleColor(user.role).withOpacity(0.1),
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    child: Text(
-                                      _getRoleDisplayName(user.role),
-                                      style: TextStyle(
-                                        fontSize: 11,
-                                        color: _getRoleColor(user.role),
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ),
-                                // Luôn hiển thị trạng thái tài khoản
                                 Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                  padding: const EdgeInsets.all(12),
                                   decoration: BoxDecoration(
-                                    color: (user.isActive ? Colors.green : Colors.red).withOpacity(0.1),
-                                    borderRadius: BorderRadius.circular(8),
+                                    color: _getRoleColor(user.role).withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(14),
                                   ),
-                                  child: Text(
-                                    user.isActive ? 'Hoạt động' : 'Đã khóa',
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      color: user.isActive ? Colors.green : Colors.red,
-                                      fontWeight: FontWeight.w600,
+                                  child: Icon(
+                                    Icons.person_rounded,
+                                    color: _getRoleColor(user.role),
+                                    size: 24,
+                                  ),
+                                ),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        user.fullName,
+                                        style: const TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
+                                          color: Color(0xFF1A1A1A),
+                                        ),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        user.email,
+                                        style: TextStyle(
+                                          fontSize: 13,
+                                          color: Colors.grey.shade600,
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Wrap(
+                                        spacing: 8,
+                                        runSpacing: 6,
+                                        children: [
+                                          // Chỉ hiển thị role badge cho admin
+                                          if (user.role == UserRole.admin)
+                                            Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                                              decoration: BoxDecoration(
+                                                color: _getRoleColor(user.role).withOpacity(0.1),
+                                                borderRadius: BorderRadius.circular(8),
+                                              ),
+                                              child: Row(
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  Icon(
+                                                    Icons.admin_panel_settings_rounded,
+                                                    size: 14,
+                                                    color: _getRoleColor(user.role),
+                                                  ),
+                                                  const SizedBox(width: 4),
+                                                  Text(
+                                                    _getRoleDisplayName(user.role),
+                                                    style: TextStyle(
+                                                      fontSize: 11,
+                                                      color: _getRoleColor(user.role),
+                                                      fontWeight: FontWeight.w600,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          // Luôn hiển thị trạng thái tài khoản
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                                            decoration: BoxDecoration(
+                                              color: (user.isActive ? primaryGreen : Colors.red).withOpacity(0.1),
+                                              borderRadius: BorderRadius.circular(8),
+                                            ),
+                                            child: Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                Container(
+                                                  width: 6,
+                                                  height: 6,
+                                                  decoration: BoxDecoration(
+                                                    color: user.isActive ? primaryGreen : Colors.red,
+                                                    shape: BoxShape.circle,
+                                                  ),
+                                                ),
+                                                const SizedBox(width: 6),
+                                                Text(
+                                                  user.isActive ? 'Hoạt động' : 'Đã khóa',
+                                                  style: TextStyle(
+                                                    fontSize: 11,
+                                                    color: user.isActive ? primaryGreen : Colors.red,
+                                                    fontWeight: FontWeight.w600,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    IconButton(
+                                      icon: const Icon(Icons.info_outline_rounded),
+                                      onPressed: () => _showUserDetails(user),
+                                      tooltip: 'Chi tiết',
+                                      color: Colors.grey.shade600,
                                     ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
+                                    if (user.role != UserRole.admin)
+                                      IconButton(
+                                        icon: Icon(
+                                          user.isActive ? Icons.block_rounded : Icons.check_circle_rounded,
+                                          color: user.isActive ? Colors.red : primaryGreen,
+                                        ),
+                                        onPressed: () => _toggleUserStatus(user),
+                                        tooltip: user.isActive ? 'Khóa tài khoản' : 'Mở khóa tài khoản',
+                                      ),
+                                  ],
                                 ),
                               ],
                             ),
-                          ],
+                          ),
                         ),
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            IconButton(
-                              icon: const Icon(Icons.info_outline),
-                              onPressed: () => _showUserDetails(user),
-                              tooltip: 'Chi tiết',
-                            ),
-                            if (user.role != UserRole.admin)
-                              IconButton(
-                                icon: Icon(
-                                  user.isActive ? Icons.block : Icons.check_circle,
-                                  color: user.isActive ? Colors.red : Colors.green,
-                                ),
-                                onPressed: () => _toggleUserStatus(user),
-                                tooltip: user.isActive ? 'Khóa tài khoản' : 'Mở khóa tài khoản',
-                              ),
-                          ],
-                        ),
-                        onTap: () => _showUserDetails(user),
                       ),
                     );
                   },
                 ),
+          ),
+        ],
     );
   }
 }
