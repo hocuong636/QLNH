@@ -106,33 +106,38 @@ class _AdminPageState extends State<AdminPage> {
     ];
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF5FAFF),
-      appBar: AppBar(
+      backgroundColor: const Color(0xFFF5F7FA),
+      appBar: _selectedIndex == 0 ? AppBar(
         backgroundColor: Colors.white,
         surfaceTintColor: Colors.white,
         elevation: 0,
+        shadowColor: Colors.black.withOpacity(0.05),
         centerTitle: false,
         titleSpacing: 16,
         title: Row(
           children: [
-            CircleAvatar(
-              radius: 20,
-              backgroundColor: colorScheme.primary.withOpacity(0.1),
-              child: Icon(
-                Icons.person_outline,
-                color: colorScheme.primary,
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: const Color(0xFF4CAF50).withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(
+                Icons.admin_panel_settings_rounded,
+                color: Color(0xFF4CAF50),
+                size: 24,
               ),
             ),
             const SizedBox(width: 12),
-            Column(
+            const Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: const [
+              children: [
                 Text(
                   'Xin chào, Admin 👋',
-              style: TextStyle(
-                    fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: Color(0xFF1A1A1A),
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF1A1A1A),
                   ),
                 ),
                 SizedBox(height: 2),
@@ -140,28 +145,44 @@ class _AdminPageState extends State<AdminPage> {
                   'Tổng quan hệ thống hôm nay',
                   style: TextStyle(
                     fontSize: 12,
-                    color: Color(0xFF8E8E93),
+                    color: Color(0xFF6B7280),
                   ),
-              ),
+                ),
               ],
             ),
           ],
         ),
         actions: [
-          IconButton(
-            onPressed: () {
-              // TODO: mở trang thông báo hệ thống
-            },
-            icon: const Icon(Icons.notifications_none_rounded,
-                color: Color(0xFF666666)),
+          Container(
+            margin: const EdgeInsets.only(right: 8),
+            decoration: BoxDecoration(
+              color: const Color(0xFF4CAF50).withOpacity(0.1),
+              shape: BoxShape.circle,
+            ),
+            child: IconButton(
+              onPressed: () {
+                // TODO: mở trang thông báo hệ thống
+              },
+              icon: const Icon(Icons.notifications_none_rounded,
+                  color: Color(0xFF4CAF50), size: 22),
+              tooltip: 'Thông báo',
+            ),
           ),
-          IconButton(
-            onPressed: _handleLogout,
-            icon: const Icon(Icons.logout_rounded, color: Color(0xFF666666)),
-            tooltip: 'Đăng xuất',
+          Container(
+            margin: const EdgeInsets.only(right: 8),
+            decoration: BoxDecoration(
+              color: const Color(0xFFEF4444).withOpacity(0.1),
+              shape: BoxShape.circle,
+            ),
+            child: IconButton(
+              onPressed: _handleLogout,
+              icon: const Icon(Icons.logout_rounded, 
+                  color: Color(0xFFEF4444), size: 22),
+              tooltip: 'Đăng xuất',
+            ),
           ),
         ],
-      ),
+      ) : null,
       body: SafeArea(
         child: AnimatedSwitcher(
           duration: const Duration(milliseconds: 300),
@@ -176,55 +197,120 @@ class _AdminPageState extends State<AdminPage> {
     return Container(
       decoration: const BoxDecoration(
         gradient: LinearGradient(
-          colors: [Color(0xFFF5FAFF), Color(0xFFFDFEFF)],
+          colors: [Color(0xFFF5F7FA), Color(0xFFFFFFFF)],
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
         ),
       ),
       child: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(24, 24, 24, 24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-
-          const Text(
-              'Thống kê nhanh',
-            style: TextStyle(
-                fontSize: 18,
-              fontWeight: FontWeight.w600,
-                color: Color(0xFF1A1A1A),
+        padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    const Color(0xFF4CAF50).withOpacity(0.1),
+                    const Color(0xFF4CAF50).withOpacity(0.05),
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: const Color(0xFF4CAF50).withOpacity(0.2),
+                  width: 1,
+                ),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF4CAF50),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: const Icon(
+                      Icons.insights_rounded,
+                      color: Colors.white,
+                      size: 32,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  const Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Thống kê nhanh',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF1A1A1A),
+                          ),
+                        ),
+                        SizedBox(height: 4),
+                        Text(
+                          'Tổng quan hệ thống',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Color(0xFF6B7280),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
 
-            const SizedBox(height: 16),
+            const SizedBox(height: 20),
 
           _buildStatCard(
             title: 'Tổng Người Dùng',
-              subtitle: 'Tất cả tài khoản trong hệ thống',
-            icon: Icons.people_outline,
-              color: const Color(0xFF3498DB),
+            subtitle: 'Tất cả tài khoản trong hệ thống',
+            icon: Icons.people_rounded,
+            color: const Color(0xFF4CAF50),
             stream: _dbRef.child('users').onValue,
           ),
 
-            const SizedBox(height: 14),
+          const SizedBox(height: 14),
 
           _buildStatCard(
-              title: 'Tổng Nhà Hàng',
-              subtitle: 'Bao gồm mọi trạng thái',
-              icon: Icons.store_mall_directory_outlined,
-              color: const Color(0xFF9B59B6),
+            title: 'Tổng Nhà Hàng',
+            subtitle: 'Bao gồm mọi trạng thái',
+            icon: Icons.restaurant_rounded,
+            color: const Color(0xFF4CAF50),
             stream: _dbRef.child('restaurants').onValue,
+          ),
+
+          const SizedBox(height: 24),
+
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            child: Row(
+              children: [
+                Container(
+                  width: 4,
+                  height: 20,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF4CAF50),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                const Text(
+                  'Chức năng Quản lý',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF1A1A1A),
+                  ),
+                ),
+              ],
             ),
-
-            const SizedBox(height: 24),
-
-            const Text(
-              'Chức năng Quản lý',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                color: Color(0xFF1A1A1A),
-              ),
           ),
 
           const SizedBox(height: 16),
@@ -234,8 +320,8 @@ class _AdminPageState extends State<AdminPage> {
                 Expanded(
                   child: _buildQuickActionCard(
                     title: 'Quản lý Người dùng',
-                    icon: Icons.people_outline,
-                    color: const Color(0xFF3498DB),
+                    icon: Icons.people_rounded,
+                    color: const Color(0xFF4CAF50),
                     onTap: () {
                       setState(() {
                         _selectedIndex = 1;
@@ -247,8 +333,8 @@ class _AdminPageState extends State<AdminPage> {
                 Expanded(
                   child: _buildQuickActionCard(
                     title: 'Báo cáo & Thống kê',
-                    icon: Icons.analytics_outlined,
-                    color: const Color(0xFF2ECC71),
+                    icon: Icons.analytics_rounded,
+                    color: const Color(0xFF4CAF50),
                     onTap: () {
                       setState(() {
                         _selectedIndex = 2;
@@ -266,8 +352,8 @@ class _AdminPageState extends State<AdminPage> {
                 Expanded(
                   child: _buildQuickActionCard(
                     title: 'Owner & Gói',
-                    icon: Icons.business_center,
-                    color: const Color(0xFF00BCD4),
+                    icon: Icons.business_center_rounded,
+                    color: const Color(0xFF4CAF50),
                     onTap: () {
                       Navigator.push(
                         context,
@@ -282,8 +368,8 @@ class _AdminPageState extends State<AdminPage> {
                 Expanded(
                   child: _buildQuickActionCard(
                     title: 'Yêu cầu',
-                    icon: Icons.request_quote,
-                    color: const Color(0xFF9B59B6),
+                    icon: Icons.request_quote_rounded,
+                    color: const Color(0xFF4CAF50),
                     onTap: () {
                       Navigator.push(
                         context,
@@ -304,8 +390,8 @@ class _AdminPageState extends State<AdminPage> {
                 Expanded(
                   child: _buildQuickActionCard(
                     title: 'Gói dịch vụ',
-                    icon: Icons.card_giftcard,
-                    color: const Color(0xFFE67E22),
+                    icon: Icons.card_giftcard_rounded,
+                    color: const Color(0xFF4CAF50),
                     onTap: () {
                       Navigator.push(
                         context,
@@ -334,47 +420,53 @@ class _AdminPageState extends State<AdminPage> {
     required Color color,
     required VoidCallback onTap,
   }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
-      child: Card(
-        elevation: 0,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(18),
         child: Container(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-            gradient: LinearGradient(
-              colors: [Colors.white, color.withOpacity(0.03)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(
+              color: const Color(0xFF4CAF50).withOpacity(0.1),
+              width: 1,
             ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.04),
+                blurRadius: 10,
+                offset: const Offset(0, 2),
+              ),
+            ],
           ),
           child: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
               Container(
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
-                  color: color.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
-          ),
-                child: Icon(icon, color: color, size: 24),
+                  color: const Color(0xFF4CAF50).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Icon(icon, color: const Color(0xFF4CAF50), size: 28),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 14),
               Text(
                 title,
                 textAlign: TextAlign.center,
                 style: const TextStyle(
-                  fontSize: 13,
+                  fontSize: 14,
                   fontWeight: FontWeight.w600,
                   color: Color(0xFF1A1A1A),
+                  height: 1.3,
                 ),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
               ),
-        ],
+            ],
           ),
         ),
       ),
@@ -389,174 +481,148 @@ class _AdminPageState extends State<AdminPage> {
     required Stream<DatabaseEvent> stream,
     int Function(dynamic)? filter,
   }) {
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeInOut,
-      child: Card(
-        elevation: 0,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        child: Container(
-          padding: const EdgeInsets.all(18),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(24),
-            gradient: LinearGradient(
-              colors: [Colors.white, color.withOpacity(0.03)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.04),
-                blurRadius: 18,
-                offset: const Offset(0, 8),
-              ),
-            ],
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: const Color(0xFF4CAF50).withOpacity(0.1),
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
           ),
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [color.withOpacity(0.18), color.withOpacity(0.08)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: const Color(0xFF4CAF50).withOpacity(0.1),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Icon(icon, 
+                color: const Color(0xFF4CAF50), size: 28),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 15,
+                    color: Color(0xFF1A1A1A),
+                    fontWeight: FontWeight.w600,
                   ),
-                  borderRadius: BorderRadius.circular(18),
-                  boxShadow: [
-                    BoxShadow(
-                      color: color.withOpacity(0.18),
-                      blurRadius: 12,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
                 ),
-                child: Icon(icon, color: color, size: 26),
-              ),
-              const SizedBox(width: 18),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: const TextStyle(
-                        fontSize: 15,
-                        color: Color(0xFF1A1A1A),
-                        fontWeight: FontWeight.w600,
-                        letterSpacing: 0.3,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      subtitle,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey.shade600,
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    StreamBuilder<DatabaseEvent>(
-                      stream: stream,
-                      builder: (context, snapshot) {
-                        if (snapshot.connectionState ==
-                            ConnectionState.waiting) {
-                          return SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(color),
-                            ),
+                const SizedBox(height: 4),
+                Text(
+                  subtitle,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: Color(0xFF6B7280),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                StreamBuilder<DatabaseEvent>(
+                  stream: stream,
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState ==
+                        ConnectionState.waiting) {
+                      return SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(color),
+                        ),
+                      );
+                    }
+                    if (snapshot.hasError) {
+                      print('StatCard [$title]: Error - ${snapshot.error}');
+                      return const Text(
+                        '0',
+                        style: TextStyle(
+                          fontSize: 32,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF4CAF50),
+                        ),
+                      );
+                    }
+
+                    if (snapshot.hasData &&
+                        snapshot.data!.snapshot.exists) {
+                      final data = snapshot.data!.snapshot.value;
+                      int count = 0;
+                      if (data != null) {
+                        if (filter != null) {
+                          count = filter(data);
+                        } else if (data is Map) {
+                          count = data.length;
+                          print(
+                            'StatCard [$title]: Found $count items (Map)',
                           );
+                          if (count > 0) {
+                            final keys = data.keys.take(3).toList();
+                            print('StatCard [$title]: Sample keys: $keys');
+                          }
+                        } else if (data is List) {
+                          count = data.length;
+                          print(
+                            'StatCard [$title]: Found $count items (List)',
+                          );
+                        } else {
+                          print(
+                            'StatCard [$title]: Data type is ${data.runtimeType}, value: $data',
+                          );
+                          count = 1;
                         }
-                        if (snapshot.hasError) {
-                          print('StatCard [$title]: Error - ${snapshot.error}');
-                          return const Text(
-                            '0',
-                            style: TextStyle(
+                      } else {
+                        print('StatCard [$title]: Data is null');
+                      }
+                      return TweenAnimationBuilder<int>(
+                        tween: IntTween(begin: 0, end: count),
+                        duration: const Duration(milliseconds: 800),
+                        builder: (context, value, child) {
+                          return Text(
+                            '$value',
+                            style: const TextStyle(
                               fontSize: 32,
                               fontWeight: FontWeight.bold,
-                              color: Colors.black87,
+                              color: Color(0xFF4CAF50),
                             ),
                           );
-                        }
+                        },
+                      );
+                    }
 
-                        if (snapshot.hasData &&
-                            snapshot.data!.snapshot.exists) {
-                          final data = snapshot.data!.snapshot.value;
-                          int count = 0;
-                          if (data != null) {
-                            if (filter != null) {
-                              count = filter(data);
-                            } else if (data is Map) {
-                              count = data.length;
-                              print(
-                                'StatCard [$title]: Found $count items (Map)',
-                              );
-                              if (count > 0) {
-                                final keys = data.keys.take(3).toList();
-                                print('StatCard [$title]: Sample keys: $keys');
-                              }
-                            } else if (data is List) {
-                              count = data.length;
-                              print(
-                                'StatCard [$title]: Found $count items (List)',
-                              );
-                            } else {
-                              print(
-                                'StatCard [$title]: Data type is ${data.runtimeType}, value: $data',
-                              );
-                              count = 1;
-                            }
-                          } else {
-                            print('StatCard [$title]: Data is null');
-                          }
-                          return TweenAnimationBuilder<int>(
-                            tween: IntTween(begin: 0, end: count),
-                            duration: const Duration(milliseconds: 800),
-                            builder: (context, value, child) {
-                              return Text(
-                                '$value',
-                                style: TextStyle(
-                                  fontSize: 32,
-                                  fontWeight: FontWeight.bold,
-                                  color: color,
-                                  shadows: [
-                                    Shadow(
-                                      color: color.withOpacity(0.3),
-                                      offset: const Offset(0, 2),
-                                      blurRadius: 4,
-                                    ),
-                                  ],
-                                ),
-                              );
-                            },
-                          );
-                        }
-
-                        print(
-                          'StatCard [$title]: No data or snapshot does not exist',
-                        );
-                        print(
-                          'StatCard [$title]: hasData=${snapshot.hasData}, exists=${snapshot.data?.snapshot.exists}',
-                        );
-                        return const Text(
-                          '0',
-                          style: TextStyle(
-                            fontSize: 32,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black87,
-                          ),
-                        );
-                      },
-                    ),
-                  ],
+                    print(
+                      'StatCard [$title]: No data or snapshot does not exist',
+                    );
+                    print(
+                      'StatCard [$title]: hasData=${snapshot.hasData}, exists=${snapshot.data?.snapshot.exists}',
+                    );
+                    return const Text(
+                      '0',
+                      style: TextStyle(
+                        fontSize: 32,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF4CAF50),
+                      ),
+                    );
+                  },
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
+        ],
       ),
     );
   }
@@ -582,8 +648,8 @@ class _AdminPageState extends State<AdminPage> {
           currentIndex: _selectedIndex,
           onTap: _onItemTapped,
           type: BottomNavigationBarType.fixed,
-          selectedItemColor: colorScheme.primary,
-          unselectedItemColor: Colors.grey.shade500,
+          selectedItemColor: const Color(0xFF4CAF50),
+          unselectedItemColor: const Color(0xFF9CA3AF),
           selectedFontSize: 12,
           unselectedFontSize: 11,
           elevation: 0,
