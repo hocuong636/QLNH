@@ -11,6 +11,7 @@ import 'inventory_management_page.dart';
 import 'owner_restaurant_management_page.dart';
 import 'staff_management_page.dart';
 import 'staff_request_management_page.dart';
+import 'reports_page.dart';
 
 class OwnerPage extends StatefulWidget {
   const OwnerPage({super.key});
@@ -223,6 +224,18 @@ class _OwnerPageState extends State<OwnerPage> {
               );
             },
           ),
+          ListTile(
+            leading: const Icon(Icons.analytics),
+            title: const Text('Báo cáo & Thống kê'),
+            onTap: () {
+              Navigator.of(context).pop();
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => const OwnerReportsPage(),
+                ),
+              );
+            },
+          ),
         ],
       ),
     );
@@ -285,178 +298,7 @@ class _OwnerPageState extends State<OwnerPage> {
   }
 
   Widget _buildDashboardPage(String? userName) {
-    return RefreshIndicator(
-      onRefresh: _loadDashboardStats,
-      child: SingleChildScrollView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.all(20.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const SizedBox(height: 10),
-            Text(
-              'Dashboard',
-              style: const TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
-                color: Colors.black87,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Quản lý nhà hàng của bạn',
-              style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
-            ),
-            const SizedBox(height: 30),
-
-            // Statistics Cards
-            Row(
-              children: [
-                Expanded(
-                  child: _buildStatCard(
-                    'Tổng đơn hàng',
-                    _isLoadingStats ? '...' : _totalOrders.toString(),
-                    Icons.receipt_long,
-                    Colors.blue,
-                    () => Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (context) => const OrderManagementPage(),
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: _buildStatCard(
-                    'Doanh thu',
-                    _isLoadingStats
-                        ? '...'
-                        : '${(_totalRevenue / 1000000).toStringAsFixed(1)}M VND',
-                    Icons.attach_money,
-                    Colors.green,
-                    () => Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (context) => const OrderManagementPage(),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(
-                  child: _buildStatCard(
-                    'Món bán chạy',
-                    _bestSellingItem,
-                    Icons.trending_up,
-                    Colors.orange,
-                    () => Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (context) => const MenuManagementPage(),
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: _buildStatCard(
-                    'Trạng thái',
-                    _restaurantStatus,
-                    Icons.store,
-                    Colors.purple,
-                    () => Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (context) =>
-                            const OwnerRestaurantManagementPage(),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 30),
-
-            // Management Cards
-            Text(
-              'Quản lý',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w600,
-                color: Colors.black87,
-              ),
-            ),
-            const SizedBox(height: 16),
-
-            _buildManagementCard(
-              'Quản lý thực đơn',
-              'Thêm, sửa, xóa món ăn',
-              Icons.restaurant_menu,
-              Colors.green,
-              () => Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (context) => const MenuManagementPage(),
-                ),
-              ),
-            ),
-            const SizedBox(height: 12),
-
-            _buildManagementCard(
-              'Quản lý bàn',
-              'Theo dõi trạng thái bàn',
-              Icons.table_restaurant,
-              Colors.orange,
-              () => Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (context) => const TableManagementPage(),
-                ),
-              ),
-            ),
-            const SizedBox(height: 12),
-
-            _buildManagementCard(
-              'Quản lý đơn hàng',
-              'Xem và cập nhật đơn hàng',
-              Icons.receipt_long,
-              Colors.purple,
-              () => Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (context) => const OrderManagementPage(),
-                ),
-              ),
-            ),
-            const SizedBox(height: 12),
-
-            _buildManagementCard(
-              'Quản lý kho',
-              'Theo dõi nguyên liệu',
-              Icons.inventory,
-              Colors.teal,
-              () => Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (context) => const InventoryManagementPage(),
-                ),
-              ),
-            ),
-            const SizedBox(height: 12),
-
-            _buildManagementCard(
-              'Quản lý nhân viên',
-              'Thêm và quản lý nhân viên nhà hàng',
-              Icons.people,
-              Colors.indigo,
-              () => Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (context) => const StaffManagementPage(),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
+    return const OwnerReportsPage();
   }
 
   Widget _buildStatCard(
