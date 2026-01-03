@@ -1,0 +1,123 @@
+{
+  "rules": {
+    // Users - users can read/write their own data, owners can manage staff in their restaurant (except ADMIN)
+    "users": {
+      ".read": "auth != null",
+      ".write": "auth != null",
+      "$userId": {
+        ".read": "auth != null && (auth.uid == $userId || (root.child('users').child(auth.uid).child('role').val() == 'OWNER' && data.child('restaurantID').val() == root.child('users').child(auth.uid).child('restaurantID').val()))",
+        ".write": "auth != null && (auth.uid == $userId || (root.child('users').child(auth.uid).child('role').val() == 'OWNER' && newData.child('role').val() != 'ADMIN' && newData.child('restaurantID').val() == root.child('users').child(auth.uid).child('restaurantID').val()))"
+      }
+    },
+    
+    // Restaurants - owners can read/write their restaurant data
+    "restaurants": {
+      ".read": "auth != null",
+      ".write": "auth != null",
+      ".indexOn": "ownerId",
+      "$restaurantId": {
+        ".write": "auth != null && root.child('users').child(auth.uid).child('restaurantID').val() == $restaurantId"
+      }
+    },
+    
+    // Tables - owners can fully manage tables in their restaurant
+    "tables": {
+      ".read": "auth != null",
+      ".write": "auth != null",
+      "$tableId": {
+        ".read": "auth != null && (auth.uid == 'admin' || data.child('restaurantID').val() == root.child('users').child(auth.uid).child('restaurantID').val())",
+        ".write": "auth != null && (auth.uid == 'admin' || (data.exists() ? data.child('restaurantID').val() == root.child('users').child(auth.uid).child('restaurantID').val() : true) && newData.child('restaurantID').val() == root.child('users').child(auth.uid).child('restaurantID').val())"
+      }
+    },
+    
+    // Menu items - owners can fully manage menu in their restaurant
+    "menu": {
+      ".read": "auth != null",
+      ".write": "auth != null",
+      ".indexOn": "restaurantId",
+      "$menuId": {
+        ".read": "auth != null && (auth.uid == 'admin' || data.child('restaurantID').val() == root.child('users').child(auth.uid).child('restaurantID').val())",
+        ".write": "auth != null && (auth.uid == 'admin' || (data.exists() ? data.child('restaurantID').val() == root.child('users').child(auth.uid).child('restaurantID').val() : true) && newData.child('restaurantID').val() == root.child('users').child(auth.uid).child('restaurantID').val())"
+      }
+    },
+    
+    // Orders - owners can fully manage orders in their restaurant
+    "orders": {
+      ".read": "auth != null",
+      ".write": "auth != null",
+      ".indexOn": "ownerId",
+      "$orderId": {
+        ".read": "auth != null && (auth.uid == 'admin' || data.child('restaurantID').val() == root.child('users').child(auth.uid).child('restaurantID').val())",
+        ".write": "auth != null && (auth.uid == 'admin' || (data.exists() ? data.child('restaurantID').val() == root.child('users').child(auth.uid).child('restaurantID').val() : true) && newData.child('restaurantID').val() == root.child('users').child(auth.uid).child('restaurantID').val())"
+      }
+    },
+    
+    // Inventory - owners can fully manage inventory in their restaurant
+    "inventory": {
+      ".read": "auth != null",
+      ".write": "auth != null",
+      ".indexOn": "restaurantID",
+      "$inventoryId": {
+        ".read": "auth != null && (auth.uid == 'admin' || data.child('restaurantID').val() == root.child('users').child(auth.uid).child('restaurantID').val())",
+        ".write": "auth != null && (auth.uid == 'admin' || (data.exists() ? data.child('restaurantID').val() == root.child('users').child(auth.uid).child('restaurantID').val() : true) && newData.child('restaurantID').val() == root.child('users').child(auth.uid).child('restaurantID').val())"
+      }
+    },
+    
+    // Inventory history - owners can fully manage history in their restaurant
+    "inventory_history": {
+      ".read": "auth != null",
+      ".write": "auth != null",
+      ".indexOn": "restaurantID",
+      "$historyId": {
+        ".read": "auth != null && (auth.uid == 'admin' || data.child('restaurantID').val() == root.child('users').child(auth.uid).child('restaurantID').val())",
+        ".write": "auth != null && (auth.uid == 'admin' || (data.exists() ? data.child('restaurantID').val() == root.child('users').child(auth.uid).child('restaurantID').val() : true) && newData.child('restaurantID').val() == root.child('users').child(auth.uid).child('restaurantID').val())"
+      }
+    },
+    
+    // Service packages - all authenticated users can read, only admin can write
+    "service_packages": {
+      ".read": "auth != null",
+      ".write": "auth != null && (auth.uid == 'admin' || root.child('users').child(auth.uid).child('role').val() == 'admin')"
+    },
+    
+    // System settings - only admin can manage
+    "system_settings": {
+      ".read": "auth != null && (auth.uid == 'admin' || root.child('users').child(auth.uid).child('role').val() == 'admin')",
+      ".write": "auth != null && (auth.uid == 'admin' || root.child('users').child(auth.uid).child('role').val() == 'admin')"
+    },
+    
+    // Audit logs - only admin can manage
+    "audit_logs": {
+      ".read": "auth != null && (auth.uid == 'admin' || root.child('users').child(auth.uid).child('role').val() == 'admin')",
+      ".write": "auth != null && (auth.uid == 'admin' || root.child('users').child(auth.uid).child('role').val() == 'admin')"
+    },
+    
+    // Notifications - users can read their own, admin and owners can write
+    "notifications": {
+      ".read": "auth != null",
+      ".write": "auth != null && (auth.uid == 'admin' || root.child('users').child(auth.uid).child('role').val() == 'admin' || root.child('users').child(auth.uid).child('role').val() == 'OWNER')",
+      "$notificationId": {
+        ".read": "auth != null && (auth.uid == 'admin' || root.child('users').child(auth.uid).child('role').val() == 'admin' || data.child('userId').val() == auth.uid)"
+      }
+    },
+    
+    // Requests - users can create their own, admin can read/update all, owners can read/update their restaurant's staff requests
+    "requests": {
+      ".read": "auth != null && (auth.uid == 'admin' || root.child('users').child(auth.uid).child('role').val() == 'admin' || root.child('users').child(auth.uid).child('role').val() == 'OWNER')",
+      "$requestId": {
+        ".read": "auth != null && (auth.uid == 'admin' || root.child('users').child(auth.uid).child('role').val() == 'admin' || (data.exists() && data.child('userId').val() == auth.uid) || (data.exists() && root.child('users').child(auth.uid).child('role').val() == 'OWNER' && data.child('ownerId').val() == auth.uid))",
+        ".write": "auth != null && (auth.uid == 'admin' || root.child('users').child(auth.uid).child('role').val() == 'admin' || (!data.exists() && newData.child('userId').val() == auth.uid) || (data.exists() && data.child('userId').val() == auth.uid) || (data.exists() && root.child('users').child(auth.uid).child('role').val() == 'OWNER' && data.child('ownerId').val() == auth.uid))"
+      }
+    },
+    
+    // Pending payments - track pending MoMo payments for auto-update
+    "pending_payments": {
+      ".read": "auth != null",
+      ".write": "auth != null",
+      "$restaurantId": {
+        ".read": "auth != null && $restaurantId == root.child('users').child(auth.uid).child('restaurantID').val()",
+        ".write": "auth != null && $restaurantId == root.child('users').child(auth.uid).child('restaurantID').val()"
+      }
+    }
+  }
+}
