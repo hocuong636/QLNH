@@ -4,14 +4,15 @@ import 'package:quanlynhahang/services/local_storage_service.dart';
 import 'package:quanlynhahang/services/dashboard_service.dart';
 import 'package:quanlynhahang/constants/user_roles.dart';
 import '../shared/profile_page.dart';
+import '../revenue/revenue_page.dart';
 import 'menu_management_page.dart';
 import 'table_management_page.dart';
 import 'order_management_page.dart';
-import 'inventory_management_page.dart';
 import 'owner_restaurant_management_page.dart';
 import 'staff_management_page.dart';
 import 'staff_request_management_page.dart';
 import 'reports_page.dart';
+import 'package_renewal_page.dart';
 
 class OwnerPage extends StatefulWidget {
   const OwnerPage({super.key});
@@ -189,18 +190,6 @@ class _OwnerPageState extends State<OwnerPage> {
             },
           ),
           ListTile(
-            leading: const Icon(Icons.inventory),
-            title: const Text('Quản lý kho'),
-            onTap: () {
-              Navigator.of(context).pop();
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (context) => const InventoryManagementPage(),
-                ),
-              );
-            },
-          ),
-          ListTile(
             leading: const Icon(Icons.people),
             title: const Text('Quản lý nhân viên'),
             onTap: () {
@@ -213,25 +202,28 @@ class _OwnerPageState extends State<OwnerPage> {
             },
           ),
           ListTile(
-            leading: const Icon(Icons.request_quote),
-            title: const Text('Yêu cầu nhân viên'),
+            leading: Icon(Icons.account_balance_wallet, color: Colors.orange.shade600),
+            title: const Text('Doanh thu'),
+            subtitle: const Text('Xem doanh thu nhà hàng', style: TextStyle(fontSize: 12)),
             onTap: () {
               Navigator.of(context).pop();
               Navigator.of(context).push(
                 MaterialPageRoute(
-                  builder: (context) => const StaffRequestManagementPage(),
+                  builder: (context) => const RevenuePage(),
                 ),
               );
             },
           ),
+          const Divider(),
           ListTile(
-            leading: const Icon(Icons.analytics),
-            title: const Text('Báo cáo & Thống kê'),
+            leading: Icon(Icons.card_membership, color: Colors.purple.shade600),
+            title: const Text('Gia hạn gói dịch vụ'),
+            subtitle: const Text('Gia hạn hoặc nâng cấp gói', style: TextStyle(fontSize: 12)),
             onTap: () {
               Navigator.of(context).pop();
               Navigator.of(context).push(
                 MaterialPageRoute(
-                  builder: (context) => const OwnerReportsPage(),
+                  builder: (context) => const PackageRenewalPage(),
                 ),
               );
             },

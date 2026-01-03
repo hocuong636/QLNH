@@ -11,6 +11,14 @@ class Restaurant {
   final bool isOpen;
   final DateTime createdAt;
   final DateTime updatedAt;
+  
+  // Platform fee settings (default 2%)
+  final double platformFeePercent;
+  
+  // Bank info for settlement
+  final String? bankName;
+  final String? bankAccountNumber;
+  final String? bankAccountName;
 
   Restaurant({
     required this.id,
@@ -25,6 +33,10 @@ class Restaurant {
     required this.isOpen,
     required this.createdAt,
     required this.updatedAt,
+    this.platformFeePercent = 2.0, // Default 2%
+    this.bankName,
+    this.bankAccountNumber,
+    this.bankAccountName,
   });
 
   factory Restaurant.fromJson(Map<String, dynamic> json) {
@@ -45,6 +57,10 @@ class Restaurant {
       updatedAt: json['updatedAt'] != null
           ? DateTime.parse(json['updatedAt'])
           : DateTime.now(),
+      platformFeePercent: (json['platformFeePercent'] ?? 2.0).toDouble(),
+      bankName: json['bankName'],
+      bankAccountNumber: json['bankAccountNumber'],
+      bankAccountName: json['bankAccountName'],
     );
   }
 
@@ -62,6 +78,10 @@ class Restaurant {
       'isOpen': isOpen,
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
+      'platformFeePercent': platformFeePercent,
+      'bankName': bankName,
+      'bankAccountNumber': bankAccountNumber,
+      'bankAccountName': bankAccountName,
     };
   }
 
@@ -78,6 +98,10 @@ class Restaurant {
     bool? isOpen,
     DateTime? createdAt,
     DateTime? updatedAt,
+    double? platformFeePercent,
+    String? bankName,
+    String? bankAccountNumber,
+    String? bankAccountName,
   }) {
     return Restaurant(
       id: id ?? this.id,
@@ -92,6 +116,10 @@ class Restaurant {
       isOpen: isOpen ?? this.isOpen,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      platformFeePercent: platformFeePercent ?? this.platformFeePercent,
+      bankName: bankName ?? this.bankName,
+      bankAccountNumber: bankAccountNumber ?? this.bankAccountNumber,
+      bankAccountName: bankAccountName ?? this.bankAccountName,
     );
   }
 }

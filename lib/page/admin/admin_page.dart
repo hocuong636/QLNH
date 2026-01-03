@@ -6,9 +6,7 @@ import 'package:quanlynhahang/constants/restaurant_status.dart';
 import 'owner_management_page.dart';
 import 'restaurant_management_page.dart';
 import 'user_management_page.dart';
-import 'reports_page.dart';
 import 'audit_log_page.dart';
-import 'system_settings_page.dart';
 import 'service_package_management_page.dart';
 import 'owner_package_management_page.dart';
 import 'request_management_page.dart';
@@ -100,8 +98,6 @@ class _AdminPageState extends State<AdminPage> {
     List<Widget> pages = [
       _buildDashboardPage(),
       const UserManagementPage(),
-      const ReportsPage(),
-      const SystemSettingsPage(),
       const ProfilePage(),
     ];
 
@@ -325,19 +321,6 @@ class _AdminPageState extends State<AdminPage> {
                     onTap: () {
                       setState(() {
                         _selectedIndex = 1;
-                      });
-                    },
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _buildQuickActionCard(
-                    title: 'Báo cáo & Thống kê',
-                    icon: Icons.analytics_rounded,
-                    color: const Color(0xFF4CAF50),
-                    onTap: () {
-                      setState(() {
-                        _selectedIndex = 2;
                       });
                     },
                   ),
@@ -672,16 +655,6 @@ class _AdminPageState extends State<AdminPage> {
               icon: Icon(Icons.people_outline, size: 24),
               activeIcon: Icon(Icons.people, size: 26),
               label: 'Người dùng',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.analytics_outlined, size: 24),
-              activeIcon: Icon(Icons.analytics, size: 26),
-              label: 'Báo cáo',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.settings_outlined, size: 24),
-              activeIcon: Icon(Icons.settings, size: 26),
-              label: 'Cài đặt',
             ),
             BottomNavigationBarItem(
               icon: Icon(Icons.account_circle_outlined, size: 24),

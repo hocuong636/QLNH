@@ -584,18 +584,35 @@ class _OrderTableDetailPageState extends State<OrderTableDetailPage>
     // Close loading dialog
     if (mounted) Navigator.pop(context);
     
+    print('PayOS Response - Success: ${payosResponse.success}');
+    print('PayOS Response - QR Code: ${payosResponse.qrCode}');
+    print('PayOS Response - Payment URL: ${payosResponse.paymentUrl}');
+    print('PayOS Response - Order Code: ${payosResponse.orderCode}');
+    
     if (!payosResponse.success) {
-      // Nếu PayOS API lỗi, fallback sang QR thủ công
+      // Nếu PayOS API lỗi, fallback sang VietQR API
       final orderCode = 'ORD${DateTime.now().millisecondsSinceEpoch % 1000000}';
-      final qrData = _paymentService.generatePayOSQRData(_currentOrder!, orderCode);
+      
+      // Dùng VietQR API URL thay vì QR string
+      const bankId = 'MB'; // Thay bằng mã ngân hàng thực
+      const accountNo = '0123456789'; // Thay bằng số tài khoản thực
+      const accountName = 'PLATFORM QLNH'; // Thay bằng tên tài khoản thực
+      final amount = _currentOrder!.totalAmount.toInt();
+      final description = Uri.encodeComponent('TT Ban ${_currentOrder!.tableId} DH $orderCode');
+      
+      final vietQRUrl = 'https://img.vietqr.io/image/$bankId-$accountNo-compact2.png'
+          '?amount=$amount&addInfo=$description&accountName=${Uri.encodeComponent(accountName)}';
+      
+      print('Fallback VietQR URL: $vietQRUrl');
       
       _showPayOSQRDialog(
-        qrData: qrData,
+        qrData: vietQRUrl, // URL hình ảnh VietQR
         orderCode: orderCode,
         paymentUrl: null,
         isFallback: true,
       );
     } else {
+      // PayOS API thành công - qrCode có thể là URL hình ảnh hoặc QR string
       _showPayOSQRDialog(
         qrData: payosResponse.qrCode ?? payosResponse.paymentUrl ?? '',
         orderCode: payosResponse.orderCode ?? '',
@@ -628,6 +645,7 @@ class _OrderTableDetailPageState extends State<OrderTableDetailPage>
         restaurantId: restaurantId,
         paymentService: _paymentService,
         isFallback: isFallback,
+        order: _currentOrder!, // Truyền order để ghi nhận doanh thu
         onPaymentConfirmed: (transactionId) async {
           Navigator.pop(dialogContext);
           await _updateOrderAsPaid(PaymentMethod.payos, transactionId);
@@ -1532,6 +1550,7 @@ class _PayOSQRDialog extends StatefulWidget {
   final String restaurantId;
   final PaymentService paymentService;
   final bool isFallback;
+  final Order order; // Thêm order để ghi nhận doanh thu
   final Function(String transactionId) onPaymentConfirmed;
   final VoidCallback onCancel;
 
@@ -1545,6 +1564,7 @@ class _PayOSQRDialog extends StatefulWidget {
     required this.restaurantId,
     required this.paymentService,
     required this.isFallback,
+    required this.order,
     required this.onPaymentConfirmed,
     required this.onCancel,
   });
@@ -1618,11 +1638,12 @@ class _PayOSQRDialogState extends State<_PayOSQRDialog> {
           _statusText = 'Thanh toán thành công!';
         });
         
-        // Cập nhật Firebase
+        // Cập nhật Firebase và ghi nhận doanh thu
         await widget.paymentService.confirmPayment(
           widget.restaurantId, 
           widget.orderId, 
-          status.transactionId ?? 'PAYOS_${widget.orderCode}'
+          status.transactionId ?? 'PAYOS_${widget.orderCode}',
+          order: widget.order,
         );
         
         // Wait and close dialog
@@ -1634,6 +1655,52 @@ class _PayOSQRDialogState extends State<_PayOSQRDialog> {
         break;
       }
     }
+  }
+  
+  /// Kiểm tra xem qrData có phải là URL hình ảnh không
+  bool _isQRImageUrl(String data) {
+    return data.startsWith('http://') || data.startsWith('https://');
+  }
+  
+  /// Tạo VietQR image URL dùng API vietqr.io (fallback)
+  Widget _buildVietQRImage() {
+    // Fallback: dùng VietQR API với thông tin ngân hàng mặc định
+    // Bạn cần cập nhật thông tin ngân hàng thực của platform
+    const bankId = 'MB';
+    const accountNo = '0123456789';
+    const accountName = 'PLATFORM QLNH';
+    final amount = widget.amount.toInt();
+    final description = Uri.encodeComponent('TT Ban ${widget.tableNumber} DH ${widget.orderCode}');
+    
+    final vietQRUrl = 'https://img.vietqr.io/image/$bankId-$accountNo-compact2.png'
+        '?amount=$amount&addInfo=$description&accountName=${Uri.encodeComponent(accountName)}';
+    
+    print('VietQR Fallback URL: $vietQRUrl');
+    
+    return Image.network(
+      vietQRUrl,
+      width: 200,
+      height: 200,
+      fit: BoxFit.contain,
+      loadingBuilder: (context, child, loadingProgress) {
+        if (loadingProgress == null) return child;
+        return const Center(child: CircularProgressIndicator());
+      },
+      errorBuilder: (context, error, stackTrace) {
+        return Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.error_outline, color: Colors.red.shade400, size: 40),
+            const SizedBox(height: 8),
+            Text(
+              'Không tải được mã QR\nVui lòng dùng nút bên dưới',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   String _formatCurrency(double amount) {
@@ -1748,7 +1815,7 @@ class _PayOSQRDialogState extends State<_PayOSQRDialog> {
               ),
               const SizedBox(height: 16),
               
-              // QR Code
+              // QR Code - Kiểm tra nếu là URL hình ảnh thì dùng Image.network
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
@@ -1759,16 +1826,39 @@ class _PayOSQRDialogState extends State<_PayOSQRDialog> {
                 child: SizedBox(
                   width: 200,
                   height: 200,
-                  child: CustomPaint(
-                    size: const Size(200, 200),
-                    painter: QrPainter(
-                      data: widget.qrData,
-                      version: QrVersions.auto,
-                      errorCorrectionLevel: QrErrorCorrectLevel.M,
-                      color: Colors.black,
-                      emptyColor: Colors.white,
-                    ),
-                  ),
+                  child: _isQRImageUrl(widget.qrData) 
+                    ? Image.network(
+                        widget.qrData,
+                        width: 200,
+                        height: 200,
+                        fit: BoxFit.contain,
+                        loadingBuilder: (context, child, loadingProgress) {
+                          if (loadingProgress == null) return child;
+                          return Center(
+                            child: CircularProgressIndicator(
+                              value: loadingProgress.expectedTotalBytes != null
+                                  ? loadingProgress.cumulativeBytesLoaded /
+                                      loadingProgress.expectedTotalBytes!
+                                  : null,
+                            ),
+                          );
+                        },
+                        errorBuilder: (context, error, stackTrace) {
+                          print('Error loading QR image: $error');
+                          // Fallback to VietQR URL nếu không load được
+                          return _buildVietQRImage();
+                        },
+                      )
+                    : CustomPaint(
+                        size: const Size(200, 200),
+                        painter: QrPainter(
+                          data: widget.qrData,
+                          version: QrVersions.auto,
+                          errorCorrectionLevel: QrErrorCorrectLevel.M,
+                          color: Colors.black,
+                          emptyColor: Colors.white,
+                        ),
+                      ),
                 ),
               ),
               const SizedBox(height: 16),
