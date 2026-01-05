@@ -1,7 +1,11 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:firebase_database/firebase_database.dart';
+import 'package:qr_flutter/qr_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:quanlynhahang/services/auth_service.dart';
 import 'package:quanlynhahang/services/local_storage_service.dart';
+import 'package:quanlynhahang/services/payment_service.dart';
 import 'package:quanlynhahang/models/restaurant.dart';
 import 'package:quanlynhahang/models/service_package.dart';
 import 'package:quanlynhahang/models/request.dart';
@@ -18,6 +22,7 @@ class _CustomerPageState extends State<CustomerPage> {
   final AuthService _authService = AuthService();
   final LocalStorageService _localStorageService = LocalStorageService();
   final FirebaseDatabase _database = FirebaseDatabase.instance;
+  final PaymentService _paymentService = PaymentService();
   
   List<Restaurant> _restaurants = [];
   bool _isLoading = true;
@@ -1066,8 +1071,11 @@ class _CustomerPageState extends State<CustomerPage> {
   }
 
   Future<void> _showPaymentDialog(ServicePackage package, Map<String, dynamic> restaurantInfo) async {
-    String selectedPaymentMethod = 'bank_transfer'; // Mặc định chuyển khoản
+    String selectedPaymentMethod = 'payos'; // Mặc định PayOS
     bool isProcessing = false;
+    PayOSPaymentResponse? paymentResponse;
+    Timer? statusCheckTimer;
+    bool paymentCompleted = false;
 
     if (!mounted) return;
 
@@ -1075,166 +1083,353 @@ class _CustomerPageState extends State<CustomerPage> {
       context: context,
       barrierDismissible: false,
       builder: (context) => StatefulBuilder(
-        builder: (context, setDialogState) => AlertDialog(
-          title: const Text('Thanh toán'),
-          content: SizedBox(
-            width: double.maxFinite,
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Thông tin gói dịch vụ
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.blue.shade50,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: Colors.blue.shade200,
-                        width: 1,
-                      ),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          package.name,
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
+        builder: (context, setDialogState) {
+          // Cleanup timer khi dialog đóng
+          void cleanupTimer() {
+            statusCheckTimer?.cancel();
+            statusCheckTimer = null;
+          }
+
+          return PopScope(
+            onPopInvokedWithResult: (bool didPop, dynamic result) {
+              cleanupTimer();
+            },
+            child: AlertDialog(
+              title: Text(paymentResponse != null ? 'Quét mã thanh toán' : 'Thanh toán'),
+              content: SizedBox(
+                width: double.maxFinite,
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Thông tin gói dịch vụ
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.blue.shade50,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: Colors.blue.shade200,
+                            width: 1,
                           ),
                         ),
-                        const SizedBox(height: 8),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Thời hạn:',
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Colors.grey.shade600,
-                              ),
-                            ),
-                            Text(
-                              '${package.durationMonths} tháng',
+                              package.name,
                               style: const TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 4),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              'Tổng tiền:',
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Colors.grey.shade600,
-                              ),
-                            ),
-                            Text(
-                              _formatCurrency(package.price),
-                              style: TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
-                                color: Colors.green.shade700,
                               ),
+                            ),
+                            const SizedBox(height: 8),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  'Thời hạn:',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.grey.shade600,
+                                  ),
+                                ),
+                                Text(
+                                  '${package.durationMonths} tháng',
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 4),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  'Tổng tiền:',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.grey.shade600,
+                                  ),
+                                ),
+                                Text(
+                                  _formatCurrency(package.price),
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.green.shade700,
+                                  ),
+                                ),
+                              ],
                             ),
                           ],
                         ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  const Text(
-                    'Chọn phương thức thanh toán:',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  RadioListTile<String>(
-                    title: const Text('Chuyển khoản ngân hàng'),
-                    subtitle: const Text('STK: 1234567890\nNgân hàng: Vietcombank\nChủ TK: Công ty QLNH'),
-                    value: 'bank_transfer',
-                    groupValue: selectedPaymentMethod,
-                    onChanged: (value) {
-                      setDialogState(() {
-                        selectedPaymentMethod = value!;
-                      });
-                    },
-                  ),
-                  RadioListTile<String>(
-                    title: const Text('Ví điện tử'),
-                    subtitle: const Text('MoMo, ZaloPay, VNPay'),
-                    value: 'e_wallet',
-                    groupValue: selectedPaymentMethod,
-                    onChanged: (value) {
-                      setDialogState(() {
-                        selectedPaymentMethod = value!;
-                      });
-                    },
-                  ),
-                  RadioListTile<String>(
-                    title: const Text('Tiền mặt'),
-                    subtitle: const Text('Thanh toán trực tiếp tại văn phòng'),
-                    value: 'cash',
-                    groupValue: selectedPaymentMethod,
-                    onChanged: (value) {
-                      setDialogState(() {
-                        selectedPaymentMethod = value!;
-                      });
-                    },
-                  ),
-                  if (isProcessing) ...[
-                    const SizedBox(height: 16),
-                    const Center(child: CircularProgressIndicator()),
-                    const SizedBox(height: 8),
-                    const Center(
-                      child: Text(
-                        'Đang xử lý thanh toán...',
-                        style: TextStyle(fontSize: 12, color: Colors.grey),
                       ),
-                    ),
-                  ],
-                ],
+                      const SizedBox(height: 24),
+                      
+                      // Nếu đã có payment response, hiển thị QR
+                      if (paymentResponse != null && paymentResponse!.success) ...[
+                        Center(
+                          child: Column(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(16),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(12),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.grey.withAlpha(50),
+                                      spreadRadius: 2,
+                                      blurRadius: 8,
+                                    ),
+                                  ],
+                                ),
+                                child: paymentResponse!.qrCode != null
+                                    ? QrImageView(
+                                        data: paymentResponse!.qrCode!,
+                                        version: QrVersions.auto,
+                                        size: 200,
+                                      )
+                                    : const Icon(Icons.qr_code, size: 200, color: Colors.grey),
+                              ),
+                              const SizedBox(height: 16),
+                              const Text(
+                                'Quét mã QR bằng app ngân hàng',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                'Hoặc',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey.shade600,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              OutlinedButton.icon(
+                                onPressed: () async {
+                                  if (paymentResponse!.paymentUrl != null) {
+                                    final uri = Uri.parse(paymentResponse!.paymentUrl!);
+                                    if (await canLaunchUrl(uri)) {
+                                      await launchUrl(uri, mode: LaunchMode.externalApplication);
+                                    }
+                                  }
+                                },
+                                icon: const Icon(Icons.open_in_new, size: 16),
+                                label: const Text('Mở trang thanh toán'),
+                              ),
+                              const SizedBox(height: 16),
+                              if (isProcessing)
+                                Column(
+                                  children: [
+                                    const SizedBox(
+                                      width: 24,
+                                      height: 24,
+                                      child: CircularProgressIndicator(strokeWidth: 2),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      'Đang chờ thanh toán...',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: Colors.grey.shade600,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                            ],
+                          ),
+                        ),
+                      ] else ...[
+                        // Hiển thị options thanh toán
+                        const Text(
+                          'Chọn phương thức thanh toán:',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        RadioListTile<String>(
+                          title: const Text('Thanh toán qua PayOS'),
+                          subtitle: const Text('Quét mã QR để thanh toán nhanh'),
+                          value: 'payos',
+                          groupValue: selectedPaymentMethod,
+                          onChanged: isProcessing ? null : (value) {
+                            setDialogState(() {
+                              selectedPaymentMethod = value!;
+                            });
+                          },
+                        ),
+                        RadioListTile<String>(
+                          title: const Text('Tiền mặt'),
+                          subtitle: const Text('Thanh toán trực tiếp tại văn phòng'),
+                          value: 'cash',
+                          groupValue: selectedPaymentMethod,
+                          onChanged: isProcessing ? null : (value) {
+                            setDialogState(() {
+                              selectedPaymentMethod = value!;
+                            });
+                          },
+                        ),
+                        if (isProcessing) ...[
+                          const SizedBox(height: 16),
+                          const Center(child: CircularProgressIndicator()),
+                          const SizedBox(height: 8),
+                          const Center(
+                            child: Text(
+                              'Đang tạo thanh toán...',
+                              style: TextStyle(fontSize: 12, color: Colors.grey),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ],
+                  ),
+                ),
               ),
-            ),
-          ),
-          actions: [
-            if (!isProcessing)
-              TextButton(
-                onPressed: () {
-                  Navigator.of(context).pop();
-                  _selectedPackage = null;
-                },
-                child: const Text('Hủy'),
-              ),
-            FilledButton(
-              onPressed: isProcessing
-                  ? null
-                  : () async {
+              actions: [
+                if (!paymentCompleted)
+                  TextButton(
+                    onPressed: isProcessing && paymentResponse == null ? null : () {
+                      cleanupTimer();
+                      Navigator.of(context).pop();
+                      _selectedPackage = null;
+                    },
+                    child: const Text('Hủy'),
+                  ),
+                if (paymentResponse == null)
+                  FilledButton(
+                    onPressed: isProcessing
+                        ? null
+                        : () async {
+                            setDialogState(() {
+                              isProcessing = true;
+                            });
+
+                            if (selectedPaymentMethod == 'payos') {
+                              // Tạo PayOS payment
+                              final userEmail = _localStorageService.getUserEmail() ?? '';
+                              final response = await _paymentService.createPackagePayment(
+                                packageId: package.id,
+                                packageName: package.name,
+                                price: package.price,
+                                durationMonths: package.durationMonths,
+                                userEmail: userEmail,
+                              );
+
+                              if (!mounted) return;
+
+                              if (response.success) {
+                                setDialogState(() {
+                                  paymentResponse = response;
+                                  isProcessing = true;
+                                });
+
+                                // Bắt đầu check status định kỳ
+                                statusCheckTimer = Timer.periodic(
+                                  const Duration(seconds: 3),
+                                  (timer) async {
+                                    if (!mounted || paymentCompleted) {
+                                      timer.cancel();
+                                      return;
+                                    }
+
+                                    final status = await _paymentService.checkPayOSPaymentStatus(
+                                      response.orderCode!,
+                                    );
+
+                                    if (status.isPaid) {
+                                      timer.cancel();
+                                      paymentCompleted = true;
+
+                                      // Xác nhận thanh toán
+                                      await _paymentService.confirmPackagePayment(
+                                        response.orderCode!,
+                                        status.transactionId ?? '',
+                                      );
+
+                                      if (mounted) {
+                                        Navigator.of(context).pop();
+                                        await _submitOwnerRequest(package, 'PayOS', restaurantInfo);
+                                      }
+                                    }
+                                  },
+                                );
+                              } else {
+                                setDialogState(() {
+                                  isProcessing = false;
+                                });
+                                if (mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(content: Text(response.message ?? 'Lỗi tạo thanh toán')),
+                                  );
+                                }
+                              }
+                            } else {
+                              // Thanh toán tiền mặt - cần xác nhận từ admin
+                              if (!mounted) return;
+                              Navigator.of(context).pop();
+                              await _submitOwnerRequest(package, 'Tiền mặt (chờ xác nhận)', restaurantInfo);
+                            }
+                          },
+                    child: const Text('Thanh toán'),
+                  ),
+                if (paymentResponse != null && !paymentCompleted)
+                  FilledButton(
+                    onPressed: () async {
+                      // Manual check
                       setDialogState(() {
                         isProcessing = true;
                       });
 
-                      // Simulate payment processing
-                      await Future.delayed(const Duration(seconds: 2));
+                      final status = await _paymentService.checkPayOSPaymentStatus(
+                        paymentResponse!.orderCode!,
+                      );
 
-                      if (!mounted) return;
+                      if (status.isPaid) {
+                        paymentCompleted = true;
+                        cleanupTimer();
 
-                      Navigator.of(context).pop();
-                      await _submitOwnerRequest(package, selectedPaymentMethod, restaurantInfo);
+                        await _paymentService.confirmPackagePayment(
+                          paymentResponse!.orderCode!,
+                          status.transactionId ?? '',
+                        );
+
+                        if (mounted) {
+                          Navigator.of(context).pop();
+                          await _submitOwnerRequest(package, 'PayOS', restaurantInfo);
+                        }
+                      } else {
+                        setDialogState(() {
+                          isProcessing = false;
+                        });
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Chưa nhận được thanh toán. Vui lòng thử lại.')),
+                          );
+                        }
+                      }
                     },
-              child: const Text('Thanh toán'),
+                    child: isProcessing
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                          )
+                        : const Text('Đã thanh toán'),
+                  ),
+              ],
             ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
@@ -1379,13 +1574,8 @@ class _CustomerPageState extends State<CustomerPage> {
       final userEmail = _localStorageService.getUserEmail() ?? '';
       final userName = _localStorageService.getUserName() ?? '';
 
-      // Lấy tên phương thức thanh toán
-      String paymentMethodName = 'Chuyển khoản ngân hàng';
-      if (paymentMethod == 'e_wallet') {
-        paymentMethodName = 'Ví điện tử';
-      } else if (paymentMethod == 'cash') {
-        paymentMethodName = 'Tiền mặt';
-      }
+      // Payment method đã được truyền trực tiếp (PayOS, Tiền mặt, etc.)
+      final paymentStatus = paymentMethod == 'PayOS' ? 'paid' : 'pending';
 
       final request = Request(
         id: DateTime.now().millisecondsSinceEpoch.toString(),
@@ -1399,8 +1589,8 @@ class _CustomerPageState extends State<CustomerPage> {
         packageName: package.name,
         packagePrice: package.price,
         packageDurationMonths: package.durationMonths,
-        paymentMethod: paymentMethodName,
-        paymentStatus: 'paid', // Đã thanh toán
+        paymentMethod: paymentMethod,
+        paymentStatus: paymentStatus,
         restaurantInfo: restaurantInfo, // Thông tin nhà hàng tạm thời
       );
 

@@ -11,6 +11,7 @@ class LocalStorageService {
   static const String _isLoggedInKey = 'is_logged_in';
   static const String _userPhoneKey = 'user_phone';
   static const String _restaurantIdKey = 'restaurant_id';
+  static const String _restaurantNameKey = 'restaurant_name';
   static const String _rememberMeEmailKey = 'remember_me_email';
   static const String _rememberMeKey = 'remember_me';
   
@@ -30,6 +31,7 @@ class LocalStorageService {
     required String role,
     required String phoneNumber,
     String? restaurantID,
+    String? restaurantName,
   }) async {
     await Future.wait([
       _prefs.setString(_userIdKey, userId),
@@ -45,6 +47,11 @@ class LocalStorageService {
       await _prefs.setString(_restaurantIdKey, restaurantID);
     } else {
       await _prefs.remove(_restaurantIdKey);
+    }
+    
+    // Lưu restaurant name nếu có
+    if (restaurantName != null) {
+      await _prefs.setString(_restaurantNameKey, restaurantName);
     }
   }
 
@@ -77,6 +84,16 @@ class LocalStorageService {
   String? getRestaurantId() {
     return _prefs.getString(_restaurantIdKey);
   }
+  
+  // Get restaurant name
+  String? getRestaurantName() {
+    return _prefs.getString(_restaurantNameKey);
+  }
+  
+  // Set restaurant name
+  Future<void> setRestaurantName(String restaurantName) async {
+    await _prefs.setString(_restaurantNameKey, restaurantName);
+  }
 
   // Check if user is logged in
   bool isLoggedIn() {
@@ -92,6 +109,7 @@ class LocalStorageService {
       _prefs.remove(_userRoleKey),
       _prefs.remove(_userPhoneKey),
       _prefs.remove(_restaurantIdKey),
+      _prefs.remove(_restaurantNameKey),
       _prefs.remove(_isLoggedInKey),
     ]);
   }

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_database/firebase_database.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:quanlynhahang/constants/user_roles.dart';
 
 class OwnerManagementPage extends StatefulWidget {
@@ -11,30 +10,15 @@ class OwnerManagementPage extends StatefulWidget {
 }
 
 class _OwnerManagementPageState extends State<OwnerManagementPage> {
-  final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _passwordController = TextEditingController();
-  final TextEditingController _nameController = TextEditingController();
-  final TextEditingController _phoneController = TextEditingController();
-
   List<Map<String, dynamic>> _owners = [];
   List<Map<String, dynamic>> _restaurants = [];
   bool _isLoading = true;
-  bool _isCreating = false;
 
   @override
   void initState() {
     super.initState();
     _loadOwners();
     _loadRestaurants();
-  }
-
-  @override
-  void dispose() {
-    _emailController.dispose();
-    _passwordController.dispose();
-    _nameController.dispose();
-    _phoneController.dispose();
-    super.dispose();
   }
 
   Future<void> _loadOwners() async {
@@ -211,67 +195,6 @@ class _OwnerManagementPageState extends State<OwnerManagementPage> {
     }
   }
 
-  Future<void> _createOwner() async {
-    if (_emailController.text.isEmpty ||
-        _passwordController.text.isEmpty ||
-        _nameController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Vui lòng điền đầy đủ thông tin')),
-      );
-      return;
-    }
-
-    setState(() => _isCreating = true);
-
-    try {
-      // Create Firebase Auth account
-      final userCredential = await FirebaseAuth.instance
-          .createUserWithEmailAndPassword(
-            email: _emailController.text.trim(),
-            password: _passwordController.text,
-          );
-
-      // Add user data to database
-      final database = FirebaseDatabase.instance;
-
-      await database.ref('users/${userCredential.user!.uid}').set({
-        'email': _emailController.text.trim(),
-        'name': _nameController.text,
-        'phone': _phoneController.text,
-        'role': UserRole.owner,
-        'restaurantID': null,
-        'isActive': true,
-        'createdAt': DateTime.now().toIso8601String(),
-        'updatedAt': DateTime.now().toIso8601String(),
-      });
-
-      // Clear form
-      _emailController.clear();
-      _passwordController.clear();
-      _nameController.clear();
-      _phoneController.clear();
-
-      // Reload owners list
-      await _loadOwners();
-
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Tạo Owner thành công')));
-        Navigator.of(context).pop(); // Close dialog
-      }
-    } catch (e) {
-      print('Error creating owner: $e');
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Lỗi tạo Owner: $e')));
-      }
-    } finally {
-      setState(() => _isCreating = false);
-    }
-  }
-
   Future<void> _toggleOwnerStatus(String ownerId, bool currentStatus) async {
     try {
       final database = FirebaseDatabase.instance;
@@ -304,72 +227,6 @@ class _OwnerManagementPageState extends State<OwnerManagementPage> {
     }
   }
 
-  void _showCreateOwnerDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Tạo Owner mới'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: _emailController,
-                decoration: const InputDecoration(
-                  labelText: 'Email',
-                  hintText: 'owner@example.com',
-                ),
-                keyboardType: TextInputType.emailAddress,
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: _passwordController,
-                decoration: const InputDecoration(
-                  labelText: 'Mật khẩu',
-                  hintText: 'Ít nhất 6 ký tự',
-                ),
-                obscureText: true,
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: _nameController,
-                decoration: const InputDecoration(
-                  labelText: 'Họ tên',
-                  hintText: 'Nguyễn Văn A',
-                ),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: _phoneController,
-                decoration: const InputDecoration(
-                  labelText: 'Số điện thoại',
-                  hintText: '0123456789',
-                ),
-                keyboardType: TextInputType.phone,
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Hủy'),
-          ),
-          ElevatedButton(
-            onPressed: _isCreating ? null : _createOwner,
-            child: _isCreating
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Text('Tạo'),
-          ),
-        ],
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -379,11 +236,6 @@ class _OwnerManagementPageState extends State<OwnerManagementPage> {
         foregroundColor: Colors.black87,
         elevation: 0,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.add),
-            onPressed: _showCreateOwnerDialog,
-            tooltip: 'Tạo Owner mới',
-          ),
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: _loadOwners,
@@ -408,11 +260,11 @@ class _OwnerManagementPageState extends State<OwnerManagementPage> {
                     'Chưa có Owner nào',
                     style: TextStyle(fontSize: 18, color: Colors.grey.shade600),
                   ),
-                  const SizedBox(height: 16),
-                  ElevatedButton.icon(
-                    onPressed: _showCreateOwnerDialog,
-                    icon: const Icon(Icons.add),
-                    label: const Text('Tạo Owner đầu tiên'),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Các Owner sẽ xuất hiện khi Admin phê duyệt yêu cầu đăng ký',
+                    style: TextStyle(fontSize: 14, color: Colors.grey.shade500),
+                    textAlign: TextAlign.center,
                   ),
                 ],
               ),
