@@ -3,7 +3,6 @@ import 'package:quanlynhahang/services/auth_service.dart';
 import 'package:quanlynhahang/services/local_storage_service.dart';
 import '../shared/profile_page.dart';
 import 'kitchen_orders_page.dart';
-import 'kitchen_inventory_page.dart';
 
 class KitchenPage extends StatefulWidget {
   const KitchenPage({super.key});
@@ -56,7 +55,6 @@ class _KitchenPageState extends State<KitchenPage> {
 
     List<Widget> pages = [
       KitchenOrdersPage(),
-      KitchenInventoryPage(),
       const ProfilePage(),
     ];
 
@@ -90,11 +88,6 @@ class _KitchenPageState extends State<KitchenPage> {
             icon: Icon(Icons.restaurant_menu_outlined),
             activeIcon: Icon(Icons.restaurant_menu),
             label: 'Đơn Hàng',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.inventory_outlined),
-            activeIcon: Icon(Icons.inventory),
-            label: 'Kiểm Kho',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.person_outline),

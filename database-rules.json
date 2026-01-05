@@ -118,6 +118,36 @@
         ".read": "auth != null && $restaurantId == root.child('users').child(auth.uid).child('restaurantID').val()",
         ".write": "auth != null && $restaurantId == root.child('users').child(auth.uid).child('restaurantID').val()"
       }
+    },
+    
+    // Revenue records - track all payment transactions with platform fee
+    "revenue_records": {
+      ".read": "auth != null",
+      ".write": "auth != null",
+      ".indexOn": ["restaurantId", "createdAt", "status"]
+    },
+    
+    // Revenue summary - aggregated revenue per restaurant
+    "revenue_summary": {
+      ".read": "auth != null",
+      ".write": "auth != null",
+      "$restaurantId": {
+        ".read": "auth != null && ($restaurantId == root.child('users').child(auth.uid).child('restaurantID').val() || root.child('users').child(auth.uid).child('role').val() == 'ADMIN')",
+        ".write": "auth != null"
+      }
+    },
+    
+    // Platform revenue - daily/monthly platform earnings (admin only)
+    "platform_revenue": {
+      ".read": "auth != null && root.child('users').child(auth.uid).child('role').val() == 'ADMIN'",
+      ".write": "auth != null"
+    },
+    
+    // Settlements - track money transfers to restaurants (admin only)
+    "settlements": {
+      ".read": "auth != null && (root.child('users').child(auth.uid).child('role').val() == 'ADMIN' || root.child('users').child(auth.uid).child('role').val() == 'OWNER')",
+      ".write": "auth != null && root.child('users').child(auth.uid).child('role').val() == 'ADMIN'",
+      ".indexOn": ["restaurantId", "status", "createdAt"]
     }
   }
 }

@@ -155,16 +155,6 @@ class _OrderManagementPageState extends State<OrderManagementPage> {
             onPressed: () => Navigator.of(context).pop(),
             child: const Text('Đóng'),
           ),
-          if (order.status != OrderStatus.done)
-            ElevatedButton(
-              onPressed: () async {
-                await _updateOrderStatus(order, _getNextStatus(order.status));
-                Navigator.of(context).pop();
-              },
-              child: Text(
-                'Chuyển ${OrderStatusConfig.getStatusText(_getNextStatus(order.status))}',
-              ),
-            ),
         ],
       ),
     );
