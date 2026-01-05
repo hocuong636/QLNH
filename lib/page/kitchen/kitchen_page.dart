@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:quanlynhahang/services/auth_service.dart';
 import 'package:quanlynhahang/services/local_storage_service.dart';
 import '../shared/profile_page.dart';
+import '../shared/chat_badge_button.dart';
 import 'kitchen_orders_page.dart';
 
 class KitchenPage extends StatefulWidget {
@@ -69,6 +70,7 @@ class _KitchenPageState extends State<KitchenPage> {
         backgroundColor: Colors.white,
         foregroundColor: Colors.black87,
         actions: [
+          const ChatBadgeButton(),
           IconButton(
             icon: const Icon(Icons.logout, color: Colors.black87),
             onPressed: _handleLogout,

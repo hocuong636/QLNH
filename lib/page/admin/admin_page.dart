@@ -10,6 +10,8 @@ import 'audit_log_page.dart';
 import 'service_package_management_page.dart';
 import 'owner_package_management_page.dart';
 import 'request_management_page.dart';
+import 'settlement_management_page.dart';
+import 'package_revenue_page.dart';
 import '../shared/profile_page.dart';
 
 class AdminPage extends StatefulWidget {
@@ -386,7 +388,45 @@ class _AdminPageState extends State<AdminPage> {
                   ),
                 ),
                 const SizedBox(width: 12),
-                const Expanded(child: SizedBox()), // Placeholder để giữ layout
+                Expanded(
+                  child: _buildQuickActionCard(
+                    title: 'Thanh toán Owner',
+                    icon: Icons.account_balance_wallet_rounded,
+                    color: const Color(0xFF4CAF50),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const SettlementManagementPage(),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 12),
+
+            Row(
+              children: [
+                Expanded(
+                  child: _buildQuickActionCard(
+                    title: 'Thống kê Package',
+                    icon: Icons.analytics_rounded,
+                    color: const Color(0xFF4CAF50),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const PackageRevenuePage(),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                const SizedBox(width: 12),
+                const Expanded(child: SizedBox()), // Placeholder
               ],
             ),
 

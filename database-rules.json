@@ -132,22 +132,69 @@
       ".read": "auth != null",
       ".write": "auth != null",
       "$restaurantId": {
-        ".read": "auth != null && ($restaurantId == root.child('users').child(auth.uid).child('restaurantID').val() || root.child('users').child(auth.uid).child('role').val() == 'ADMIN')",
+        ".read": "auth != null && ($restaurantId == root.child('users').child(auth.uid).child('restaurantID').val() || root.child('users').child(auth.uid).child('role').val() == 'ADMIN' || root.child('users').child(auth.uid).child('role').val() == 'admin')",
         ".write": "auth != null"
       }
     },
     
     // Platform revenue - daily/monthly platform earnings (admin only)
     "platform_revenue": {
-      ".read": "auth != null && root.child('users').child(auth.uid).child('role').val() == 'ADMIN'",
+      ".read": "auth != null && (root.child('users').child(auth.uid).child('role').val() == 'ADMIN' || root.child('users').child(auth.uid).child('role').val() == 'admin')",
       ".write": "auth != null"
     },
     
     // Settlements - track money transfers to restaurants (admin only)
     "settlements": {
-      ".read": "auth != null && (root.child('users').child(auth.uid).child('role').val() == 'ADMIN' || root.child('users').child(auth.uid).child('role').val() == 'OWNER')",
-      ".write": "auth != null && root.child('users').child(auth.uid).child('role').val() == 'ADMIN'",
+      ".read": "auth != null && (root.child('users').child(auth.uid).child('role').val() == 'ADMIN' || root.child('users').child(auth.uid).child('role').val() == 'admin' || root.child('users').child(auth.uid).child('role').val() == 'OWNER')",
+      ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() == 'ADMIN' || root.child('users').child(auth.uid).child('role').val() == 'admin')",
       ".indexOn": ["restaurantId", "status", "createdAt"]
+    },
+    
+    // Pending package payments - track PayOS payments for service packages
+    "pending_package_payments": {
+      ".read": "auth != null && (root.child('users').child(auth.uid).child('role').val() == 'ADMIN' || root.child('users').child(auth.uid).child('role').val() == 'admin')",
+      ".write": "auth != null",
+      ".indexOn": ["status", "createdAt"]
+    },
+    
+    // Renewal requests - Owner package renewal requests
+    "renewal_requests": {
+      ".read": "auth != null && (root.child('users').child(auth.uid).child('role').val() == 'ADMIN' || root.child('users').child(auth.uid).child('role').val() == 'admin' || root.child('users').child(auth.uid).child('role').val() == 'OWNER')",
+      ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() == 'ADMIN' || root.child('users').child(auth.uid).child('role').val() == 'admin' || root.child('users').child(auth.uid).child('role').val() == 'OWNER')",
+      ".indexOn": ["status", "ownerId", "createdAt"]
+    },
+    
+    // Renewal history - completed package renewals (admin can read all, owner can write)
+    "renewal_history": {
+      ".read": "auth != null && (root.child('users').child(auth.uid).child('role').val() == 'ADMIN' || root.child('users').child(auth.uid).child('role').val() == 'admin')",
+      ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() == 'OWNER')",
+      ".indexOn": ["userId", "createdAt", "packageId"]
+    },
+    
+    // Chat rooms - users can read/write chat rooms they are members of
+    "chatRooms": {
+      ".read": "auth != null",
+      ".write": "auth != null",
+      ".indexOn": ["restaurantId"],
+      "$chatRoomId": {
+        ".read": "auth != null",
+        ".write": "auth != null"
+      }
+    },
+    
+    // Messages - users can read/write messages in chat rooms they are members of
+    "messages": {
+      ".read": "auth != null",
+      ".write": "auth != null",
+      "$chatRoomId": {
+        ".read": "auth != null",
+        ".write": "auth != null",
+        ".indexOn": ["timestamp"],
+        "$messageId": {
+          ".read": "auth != null",
+          ".write": "auth != null"
+        }
+      }
     }
   }
 }

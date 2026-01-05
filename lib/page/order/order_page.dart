@@ -7,6 +7,7 @@ import 'package:quanlynhahang/models/table.dart';
 import 'package:quanlynhahang/models/order.dart';
 import 'package:quanlynhahang/page/order/order_table_detail_page.dart';
 import '../shared/profile_page.dart';
+import '../shared/chat_badge_button.dart';
 
 class OrderPage extends StatefulWidget {
   const OrderPage({super.key});
@@ -377,6 +378,7 @@ class _OrderPageState extends State<OrderPage> {
         backgroundColor: Colors.white,
         foregroundColor: Colors.black87,
         actions: [
+          const ChatBadgeButton(),
           IconButton(
             icon: const Icon(Icons.refresh, color: Colors.black87),
             onPressed: _loadTables,

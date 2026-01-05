@@ -16,6 +16,7 @@ import 'page/order/order_menu_page.dart';
 import 'page/order/order_payment_page.dart';
 import 'page/order/order_history_page.dart';
 import 'page/customer/customer_page.dart';
+import 'page/chat/chat_list_page.dart';
 import 'services/local_storage_service.dart';
 
 Future<void> main() async {
@@ -63,6 +64,7 @@ class MyApp extends StatelessWidget {
         '/order/payment': (context) => const OrderPaymentPage(),
         '/order/order_history': (context) => const OrderHistoryPage(),
         '/customer': (context) => const CustomerPage(),
+        '/chat': (context) => const ChatListPage(),
       },
     );
   }

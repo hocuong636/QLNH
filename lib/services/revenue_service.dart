@@ -99,9 +99,12 @@ class RevenueService {
   }
 
   /// Cập nhật tổng hợp doanh thu nhà hàng
+  /// Chỉ cộng vào pendingSettlement nếu là PayOS (cần Admin thanh toán)
+  /// Thanh toán tiền mặt nhà hàng nhận trực tiếp, không cần Admin thanh toán
   Future<void> _updateRestaurantRevenueSummary(String restaurantId, RevenueRecord record) async {
     try {
       final summaryRef = _database.child('revenue_summary').child(restaurantId);
+      final isPayOS = record.paymentMethod == 'payos';
       
       await summaryRef.runTransaction((Object? current) {
         if (current == null) {
@@ -110,9 +113,15 @@ class RevenueService {
             'totalRevenue': record.totalAmount,
             'totalPlatformFee': record.platformFee,
             'totalRestaurantAmount': record.restaurantAmount,
-            'pendingSettlement': record.restaurantAmount,
+            // Chỉ PayOS mới cần pending settlement
+            'pendingSettlement': isPayOS ? record.restaurantAmount : 0,
             'settledAmount': 0,
             'totalTransactions': 1,
+            // Tách riêng theo phương thức thanh toán
+            'cashRevenue': isPayOS ? 0 : record.restaurantAmount,
+            'payosRevenue': isPayOS ? record.restaurantAmount : 0,
+            'cashTransactions': isPayOS ? 0 : 1,
+            'payosTransactions': isPayOS ? 1 : 0,
             'updatedAt': DateTime.now().toIso8601String(),
           });
         }
@@ -121,7 +130,15 @@ class RevenueService {
         data['totalRevenue'] = (data['totalRevenue'] ?? 0) + record.totalAmount;
         data['totalPlatformFee'] = (data['totalPlatformFee'] ?? 0) + record.platformFee;
         data['totalRestaurantAmount'] = (data['totalRestaurantAmount'] ?? 0) + record.restaurantAmount;
-        data['pendingSettlement'] = (data['pendingSettlement'] ?? 0) + record.restaurantAmount;
+        // Chỉ cộng pending settlement nếu là PayOS
+        if (isPayOS) {
+          data['pendingSettlement'] = (data['pendingSettlement'] ?? 0) + record.restaurantAmount;
+          data['payosRevenue'] = (data['payosRevenue'] ?? 0) + record.restaurantAmount;
+          data['payosTransactions'] = (data['payosTransactions'] ?? 0) + 1;
+        } else {
+          data['cashRevenue'] = (data['cashRevenue'] ?? 0) + record.restaurantAmount;
+          data['cashTransactions'] = (data['cashTransactions'] ?? 0) + 1;
+        }
         data['totalTransactions'] = (data['totalTransactions'] ?? 0) + 1;
         data['updatedAt'] = DateTime.now().toIso8601String();
         

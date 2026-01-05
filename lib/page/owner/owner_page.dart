@@ -4,6 +4,7 @@ import 'package:quanlynhahang/services/local_storage_service.dart';
 import 'package:quanlynhahang/services/dashboard_service.dart';
 import 'package:quanlynhahang/constants/user_roles.dart';
 import '../shared/profile_page.dart';
+import '../shared/chat_badge_button.dart';
 import '../revenue/revenue_page.dart';
 import 'menu_management_page.dart';
 import 'table_management_page.dart';
@@ -13,6 +14,7 @@ import 'staff_management_page.dart';
 import 'staff_request_management_page.dart';
 import 'reports_page.dart';
 import 'package_renewal_page.dart';
+import 'bank_info_page.dart';
 
 class OwnerPage extends StatefulWidget {
   const OwnerPage({super.key});
@@ -228,6 +230,21 @@ class _OwnerPageState extends State<OwnerPage> {
               );
             },
           ),
+          ListTile(
+            leading: Icon(Icons.account_balance, color: Colors.teal.shade600),
+            title: const Text('Thông tin ngân hàng'),
+            subtitle: const Text('Cập nhật tài khoản nhận tiền', style: TextStyle(fontSize: 12)),
+            onTap: () {
+              Navigator.of(context).pop();
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => const BankInfoPage(),
+                ),
+              );
+            },
+          ),
+          const Divider(),
+          const ChatDrawerTile(),
         ],
       ),
     );
@@ -258,6 +275,7 @@ class _OwnerPageState extends State<OwnerPage> {
           ),
         ),
         actions: [
+          const ChatBadgeButton(),
           IconButton(
             icon: const Icon(Icons.logout, color: Colors.black87),
             onPressed: _handleLogout,
