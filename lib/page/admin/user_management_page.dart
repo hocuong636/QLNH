@@ -311,8 +311,7 @@ class _UserManagementPageState extends State<UserManagementPage> {
   Widget _buildFilterChip(String value, String label, IconData icon) {
     final isSelected = _selectedStatusFilter == value;
     const Color primaryGreen = Color(0xFF4CAF50);
-    return Expanded(
-      child: Material(
+    return Material(
         color: Colors.transparent,
         child: InkWell(
           onTap: () {
@@ -324,7 +323,7 @@ class _UserManagementPageState extends State<UserManagementPage> {
           borderRadius: BorderRadius.circular(12),
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 200),
-            padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 14),
             decoration: BoxDecoration(
               color: isSelected ? Colors.white : Colors.transparent,
               borderRadius: BorderRadius.circular(12),
@@ -344,30 +343,31 @@ class _UserManagementPageState extends State<UserManagementPage> {
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
-              mainAxisSize: MainAxisSize.min,
+              mainAxisSize: MainAxisSize.max,
               children: [
                 Icon(
                   icon,
-                  size: 16,
+                  size: 18,
                   color: isSelected ? primaryGreen : Colors.grey.shade600,
                 ),
-                const SizedBox(width: 6),
+                const SizedBox(width: 8),
                 Flexible(
                   child: Text(
                     label,
                     style: TextStyle(
-                      fontSize: 13,
+                      fontSize: 14,
                       fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
                       color: isSelected ? primaryGreen : Colors.grey.shade700,
                     ),
+                    textAlign: TextAlign.center,
                     overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
                   ),
                 ),
               ],
             ),
           ),
         ),
-      ),
     );
   }
 
@@ -423,12 +423,18 @@ class _UserManagementPageState extends State<UserManagementPage> {
                 const SizedBox(height: 12),
                 Row(
                   children: [
-                    _buildFilterChip('all', 'Tất cả', Icons.filter_list_rounded),
+                    Expanded(
+                      child: _buildFilterChip('all', 'Tất cả', Icons.filter_list_rounded),
+                    ),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: _buildFilterChip('active', 'Hoạt động', Icons.check_circle_rounded),
+                    ),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: _buildFilterChip('inactive', 'Đã khóa', Icons.block_rounded),
+                    ),
                     const SizedBox(width: 8),
-                    _buildFilterChip('active', 'Hoạt động', Icons.check_circle_rounded),
-                    const SizedBox(width: 8),
-                    _buildFilterChip('inactive', 'Đã khóa', Icons.block_rounded),
-                    const Spacer(),
                     Container(
                       decoration: BoxDecoration(
                         color: primaryGreen.withOpacity(0.1),

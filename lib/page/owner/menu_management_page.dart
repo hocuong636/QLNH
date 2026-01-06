@@ -106,19 +106,23 @@ class _MenuManagementPageState extends State<MenuManagementPage> {
     bool isAvailable = item?.isAvailable ?? true;
     bool isUploading = false;
     File? selectedImage;
+    const Color primaryBlue = Color(0xFF64B5F6);
 
     showDialog(
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
-          title: Text(item == null ? 'Thêm món ăn' : 'Sửa món ăn'),
+          title: Text(
+            item == null ? 'Thêm món ăn' : 'Sửa món ăn',
+            style: const TextStyle(color: primaryBlue, fontWeight: FontWeight.bold),
+          ),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // Hiển thị hình ảnh
+                // Image upload
                 GestureDetector(
-                  onTap: () async {
+                  onTap: isUploading ? null : () async {
                     final ImagePicker picker = ImagePicker();
                     final XFile? image = await picker.pickImage(
                       source: ImageSource.gallery,
@@ -134,19 +138,16 @@ class _MenuManagementPageState extends State<MenuManagementPage> {
                   },
                   child: Container(
                     width: double.infinity,
-                    height: 200,
+                    height: 180,
                     decoration: BoxDecoration(
-                      color: Colors.grey.shade200,
+                      color: const Color(0xFFE3F2FD),
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.grey.shade400),
+                      border: Border.all(color: primaryBlue.withOpacity(0.3)),
                     ),
                     child: selectedImage != null
                         ? ClipRRect(
                             borderRadius: BorderRadius.circular(12),
-                            child: Image.file(
-                              selectedImage!,
-                              fit: BoxFit.cover,
-                            ),
+                            child: Image.file(selectedImage!, fit: BoxFit.cover),
                           )
                         : imageUrl.isNotEmpty
                             ? ClipRRect(
@@ -157,8 +158,7 @@ class _MenuManagementPageState extends State<MenuManagementPage> {
                                   placeholder: (context, url) => const Center(
                                     child: CircularProgressIndicator(),
                                   ),
-                                  errorWidget: (context, url, error) =>
-                                      _buildImagePlaceholder(),
+                                  errorWidget: (context, url, error) => _buildImagePlaceholder(),
                                 ),
                               )
                             : _buildImagePlaceholder(),
@@ -167,53 +167,86 @@ class _MenuManagementPageState extends State<MenuManagementPage> {
                 const SizedBox(height: 8),
                 Text(
                   'Nhấn để chọn hình ảnh',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey.shade600,
-                  ),
+                  style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
                 ),
                 const SizedBox(height: 16),
+                
+                // Tên món ăn
                 TextField(
                   controller: nameController,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     labelText: 'Tên món ăn *',
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.restaurant),
+                    prefixIcon: const Icon(Icons.restaurant, color: primaryBlue),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: primaryBlue, width: 2),
+                    ),
                   ),
                 ),
                 const SizedBox(height: 12),
+                
+                // Mô tả
                 TextField(
                   controller: descriptionController,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     labelText: 'Mô tả',
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.description),
+                    prefixIcon: const Icon(Icons.description, color: primaryBlue),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: primaryBlue, width: 2),
+                    ),
                   ),
                   maxLines: 3,
                 ),
                 const SizedBox(height: 12),
+                
+                // Giá
                 TextField(
                   controller: priceController,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     labelText: 'Giá (VND) *',
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.attach_money),
+                    prefixIcon: const Icon(Icons.attach_money, color: primaryBlue),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: primaryBlue, width: 2),
+                    ),
                   ),
                   keyboardType: TextInputType.number,
                 ),
                 const SizedBox(height: 12),
+                
+                // Danh mục
                 DropdownButtonFormField<String>(
-                  initialValue: selectedCategory,
-                  decoration: const InputDecoration(
+                  value: selectedCategory,
+                  isExpanded: true,
+                  decoration: InputDecoration(
                     labelText: 'Danh mục',
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.category),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: primaryBlue, width: 2),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                   ),
                   items: _categories
                       .where((cat) => cat != 'Tất cả')
                       .map((category) => DropdownMenuItem(
                             value: category,
-                            child: Text(category),
+                            child: Text(
+                              category,
+                              overflow: TextOverflow.ellipsis,
+                            ),
                           ))
                       .toList(),
                   onChanged: (value) {
@@ -223,20 +256,21 @@ class _MenuManagementPageState extends State<MenuManagementPage> {
                   },
                 ),
                 const SizedBox(height: 12),
+                
+                // Toggle có sẵn
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text(
-                      'Món ăn có sẵn:',
-                      style: TextStyle(fontSize: 16),
-                    ),
+                    const Text('Món ăn có sẵn:', style: TextStyle(fontSize: 16)),
                     Switch(
                       value: isAvailable,
-                      onChanged: (value) =>
-                          setDialogState(() => isAvailable = value),
+                      activeColor: primaryBlue,
+                      onChanged: (value) => setDialogState(() => isAvailable = value),
                     ),
                   ],
                 ),
+                
+                // Loading
                 if (isUploading)
                   const Padding(
                     padding: EdgeInsets.only(top: 16),
@@ -244,7 +278,7 @@ class _MenuManagementPageState extends State<MenuManagementPage> {
                       children: [
                         CircularProgressIndicator(),
                         SizedBox(height: 8),
-                        Text('Đang tải hình ảnh...'),
+                        Text('Đang xử lý...'),
                       ],
                     ),
                   ),
@@ -253,17 +287,14 @@ class _MenuManagementPageState extends State<MenuManagementPage> {
           ),
           actions: [
             TextButton(
-              onPressed: isUploading
-                  ? null
-                  : () => Navigator.of(context).pop(),
+              onPressed: isUploading ? null : () => Navigator.of(context).pop(),
               child: const Text('Hủy'),
             ),
             ElevatedButton(
               onPressed: isUploading
                   ? null
                   : () async {
-                      if (nameController.text.isEmpty ||
-                          priceController.text.isEmpty) {
+                      if (nameController.text.isEmpty || priceController.text.isEmpty) {
                         _showSnackBar('Vui lòng nhập tên và giá');
                         return;
                       }
@@ -271,7 +302,6 @@ class _MenuManagementPageState extends State<MenuManagementPage> {
                       setDialogState(() => isUploading = true);
 
                       try {
-                        // Get restaurant ID from local storage
                         String? restaurantId = _localStorageService.getRestaurantId();
                         
                         if (restaurantId == null || restaurantId.isEmpty) {
@@ -280,20 +310,16 @@ class _MenuManagementPageState extends State<MenuManagementPage> {
                           return;
                         }
 
-                        // Upload hình ảnh nếu có
                         String finalImageUrl = imageUrl;
                         if (selectedImage != null) {
-                          finalImageUrl = await _uploadImage(
-                            selectedImage!,
-                            restaurantId,
-                          );
+                          finalImageUrl = await _uploadImage(selectedImage!, restaurantId);
                         }
 
                         MenuItem newItem = MenuItem(
                           id: item?.id ?? '',
                           restaurantId: restaurantId,
-                          name: nameController.text,
-                          description: descriptionController.text,
+                          name: nameController.text.trim(),
+                          description: descriptionController.text.trim(),
                           price: double.parse(priceController.text),
                           category: selectedCategory,
                           imageUrl: finalImageUrl,
@@ -308,12 +334,10 @@ class _MenuManagementPageState extends State<MenuManagementPage> {
                           await _menuService.updateMenuItem(newItem);
                         }
 
-                        // Đóng dialog trước
                         if (context.mounted) {
                           Navigator.of(context).pop();
                         }
 
-                        // Hiển thị thông báo và reload
                         _showSnackBar(
                           item == null
                               ? 'Thêm món ăn thành công'
@@ -321,15 +345,16 @@ class _MenuManagementPageState extends State<MenuManagementPage> {
                         );
                         await _loadMenuItems();
                       } catch (e) {
-                        // Đảm bảo tắt loading
                         setDialogState(() => isUploading = false);
-                        
-                        // Hiển thị lỗi
                         if (context.mounted) {
                           _showSnackBar('Lỗi: $e');
                         }
                       }
                     },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: primaryBlue,
+                foregroundColor: Colors.white,
+              ),
               child: Text(item == null ? 'Thêm' : 'Cập nhật'),
             ),
           ],
@@ -344,13 +369,16 @@ class _MenuManagementPageState extends State<MenuManagementPage> {
       children: [
         Icon(
           Icons.add_photo_alternate,
-          size: 60,
-          color: Colors.grey.shade400,
+          size: 50,
+          color: const Color(0xFF64B5F6),
         ),
         const SizedBox(height: 8),
         Text(
           'Thêm hình ảnh',
-          style: TextStyle(color: Colors.grey.shade600),
+          style: TextStyle(
+            color: const Color(0xFF64B5F6),
+            fontSize: 14,
+          ),
         ),
       ],
     );

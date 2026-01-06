@@ -91,6 +91,9 @@ class _OrderCartPageState extends State<OrderCartPage> {
 
   void _addToCart(MenuItem item) {
     int quantity = 1;
+    const Color primaryBlue = Color(0xFF64B5F6);
+    const Color lightBlue = Color(0xFFE3F2FD);
+    const Color green = Color(0xFF2ECC71);
     
     showDialog(
       context: context,
@@ -99,95 +102,90 @@ class _OrderCartPageState extends State<OrderCartPage> {
         return StatefulBuilder(
           builder: (context, setDialogState) {
             return AlertDialog(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
               title: Text(
                 item.name,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                ),
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
               ),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
+                  // Price chip
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
                     decoration: BoxDecoration(
-                      color: Colors.orange.shade50,
-                      borderRadius: BorderRadius.circular(8),
+                      color: lightBlue,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: primaryBlue.withOpacity(0.2)),
                     ),
                     child: Text(
-                      '${item.price.toStringAsFixed(0)} VND',
-                      style: const TextStyle(
+                      '${item.price.toStringAsFixed(0)} đ',
+                      style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
-                        color: Colors.orange,
+                        color: primaryBlue,
                       ),
                     ),
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 20),
+                  const Text('Chọn số lượng', style: TextStyle(fontWeight: FontWeight.w500)),
+                  const SizedBox(height: 12),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Container(
-                        decoration: BoxDecoration(
-                          color: quantity > 1 ? Colors.red.shade50 : Colors.grey.shade200,
-                          shape: BoxShape.circle,
-                        ),
-                        child: IconButton(
-                          onPressed: quantity > 1
-                              ? () => setDialogState(() => quantity--)
-                              : null,
-                          icon: Icon(
-                            Icons.remove,
-                            color: quantity > 1 ? Colors.red : Colors.grey,
-                            size: 28,
-                          ),
-                        ),
+                      _circleBtn(
+                        enabled: quantity > 1,
+                        icon: Icons.remove,
+                        bg: quantity > 1 ? Colors.red.shade50 : Colors.grey.shade200,
+                        iconColor: quantity > 1 ? Colors.red : Colors.grey,
+                        onTap: () {
+                          if (quantity > 1) setDialogState(() => quantity--);
+                        },
                       ),
                       Container(
-                        margin: const EdgeInsets.symmetric(horizontal: 20),
-                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                        margin: const EdgeInsets.symmetric(horizontal: 18),
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                         decoration: BoxDecoration(
-                          color: Colors.blue.shade50,
-                          borderRadius: BorderRadius.circular(8),
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: primaryBlue.withOpacity(0.2)),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.04),
+                              blurRadius: 6,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
                         ),
                         child: Text(
                           '$quantity',
-                          style: const TextStyle(
-                            fontSize: 28,
+                          style: TextStyle(
+                            fontSize: 26,
                             fontWeight: FontWeight.bold,
-                            color: Colors.blue,
+                            color: primaryBlue,
                           ),
                         ),
                       ),
-                      Container(
-                        decoration: BoxDecoration(
-                          color: Colors.green.shade50,
-                          shape: BoxShape.circle,
-                        ),
-                        child: IconButton(
-                          onPressed: () => setDialogState(() => quantity++),
-                          icon: const Icon(
-                            Icons.add,
-                            color: Colors.green,
-                            size: 28,
-                          ),
-                        ),
+                      _circleBtn(
+                        enabled: true,
+                        icon: Icons.add,
+                        bg: Colors.green.shade50,
+                        iconColor: Colors.green,
+                        onTap: () => setDialogState(() => quantity++),
                       ),
                     ],
                   ),
                 ],
               ),
+              actionsPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(dialogContext),
                   style: TextButton.styleFrom(
                     foregroundColor: Colors.grey.shade700,
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                   ),
                   child: const Text('Hủy'),
                 ),
@@ -216,16 +214,14 @@ class _OrderCartPageState extends State<OrderCartPage> {
                     _showSnackBar('Đã thêm ${item.name} x$quantity');
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green,
+                    backgroundColor: green,
                     foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                   ),
                   child: const Text(
                     'Thêm vào giỏ',
-                    style: TextStyle(fontWeight: FontWeight.w600),
+                    style: TextStyle(fontWeight: FontWeight.w700),
                   ),
                 ),
               ],
@@ -233,6 +229,32 @@ class _OrderCartPageState extends State<OrderCartPage> {
           },
         );
       },
+    );
+  }
+
+  Widget _circleBtn({
+    required bool enabled,
+    required IconData icon,
+    required Color bg,
+    required Color iconColor,
+    required VoidCallback onTap,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: bg,
+        shape: BoxShape.circle,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: IconButton(
+        onPressed: enabled ? onTap : null,
+        icon: Icon(icon, color: iconColor, size: 26),
+      ),
     );
   }
 

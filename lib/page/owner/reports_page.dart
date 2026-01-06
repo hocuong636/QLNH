@@ -199,55 +199,69 @@ class _OwnerReportsPageState extends State<OwnerReportsPage> {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        // Header section với title lớn
+        // Header title
         Container(
-          padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
+          padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
           color: Colors.white,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          child: const Row(
             children: [
-              const Text(
-                'Báo cáo & Thống kê',
+              Text(
+                'Thống kê',
                 style: TextStyle(
-                  fontSize: 28,
+                  fontSize: 24,
                   fontWeight: FontWeight.bold,
                   color: Color(0xFF1A1A1A),
                 ),
               ),
-              const SizedBox(height: 16),
-              // Period selector
+            ],
+          ),
+        ),
+        // Period selector - giống revenue page
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.grey.shade200,
+                blurRadius: 4,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
               Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Expanded(
-                    child: SegmentedButton<String>(
-                      segments: const [
-                        ButtonSegment(value: 'today', label: Text('Hôm nay')),
-                        ButtonSegment(value: 'week', label: Text('Tuần này')),
-                        ButtonSegment(value: 'month', label: Text('Tháng này')),
-                      ],
-                      selected: {_selectedPeriod},
-                      onSelectionChanged: (Set<String> newSelection) {
-                        setState(() {
-                          _selectedPeriod = newSelection.first;
-                          _loadReports();
-                        });
-                      },
-                    ),
+                  const Text(
+                    'Khoảng thời gian',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                   ),
-                  const SizedBox(width: 12),
-                  Container(
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF4CAF50).withOpacity(0.1),
-                      shape: BoxShape.circle,
-                    ),
-                    child: IconButton(
-                      icon: const Icon(Icons.refresh_rounded),
-                      onPressed: _loadReports,
-                      tooltip: 'Làm mới',
-                      color: const Color(0xFF4CAF50),
-                    ),
+                  IconButton(
+                    icon: const Icon(Icons.refresh, color: Color(0xFF64B5F6)),
+                    onPressed: _loadReports,
+                    tooltip: 'Làm mới',
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
                   ),
                 ],
+              ),
+              const SizedBox(height: 10),
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: [
+                    _buildPeriodChip('Hôm nay', 'today'),
+                    const SizedBox(width: 8),
+                    _buildPeriodChip('Tuần này', 'week'),
+                    const SizedBox(width: 8),
+                    _buildPeriodChip('Tháng này', 'month'),
+                  ],
+                ),
               ),
             ],
           ),
@@ -257,7 +271,7 @@ class _OwnerReportsPageState extends State<OwnerReportsPage> {
           child: _isLoading
               ? const Center(
                   child: CircularProgressIndicator(
-                    valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF4CAF50)),
+                    valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF64B5F6)),
                   ),
                 )
               : _restaurantId == null
@@ -281,85 +295,146 @@ class _OwnerReportsPageState extends State<OwnerReportsPage> {
                         ],
                       ),
                     )
-                  : SingleChildScrollView(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Revenue Summary Cards
-                          Row(
-                            children: [
-                              Expanded(
-                                child: _buildStatCard(
-                                  title: 'Tổng Doanh Thu',
-                                  value: _formatCurrency(_getDoubleValue(_revenueData['totalRevenue'])),
-                                  icon: Icons.attach_money,
-                                  color: const Color(0xFF2ECC71),
+                  : RefreshIndicator(
+                      onRefresh: _loadReports,
+                      child: SingleChildScrollView(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Main revenue card - giống revenue page
+                            Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.all(20),
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: [const Color(0xFF90CAF9), const Color(0xFF64B5F6)],
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
                                 ),
+                                borderRadius: BorderRadius.circular(16),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: const Color(0xFFBBDEFB).withOpacity(0.6),
+                                    blurRadius: 8,
+                                    offset: const Offset(0, 4),
+                                  ),
+                                ],
                               ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: _buildStatCard(
-                                  title: 'Tổng Đơn Hàng',
-                                  value: '${_revenueData['totalOrders'] ?? 0}',
-                                  icon: Icons.receipt_long,
-                                  color: const Color(0xFF3498DB),
-                                ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Container(
+                                        padding: const EdgeInsets.all(10),
+                                        decoration: BoxDecoration(
+                                          color: Colors.white.withOpacity(0.2),
+                                          borderRadius: BorderRadius.circular(10),
+                                        ),
+                                        child: const Icon(Icons.attach_money, color: Colors.white, size: 24),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      const Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            'Tổng Doanh Thu',
+                                            style: TextStyle(color: Colors.white70, fontSize: 14),
+                                          ),
+                                          Text(
+                                            'Trong khoảng thời gian đã chọn',
+                                            style: TextStyle(color: Colors.white54, fontSize: 11),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 16),
+                                  Text(
+                                    '${_formatCurrency(_getDoubleValue(_revenueData['totalRevenue']))} đ',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 32,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    '${_revenueData['totalOrders'] ?? 0} đơn hàng',
+                                    style: const TextStyle(color: Colors.white70, fontSize: 14),
+                                  ),
+                                ],
                               ),
-                            ],
-                          ),
-                          const SizedBox(height: 12),
-                          _buildStatCard(
-                            title: 'Giá Trị Đơn Hàng Trung Bình',
-                            value: _formatCurrency(_getDoubleValue(_revenueData['averageOrderValue'])),
-                            icon: Icons.trending_up,
-                            color: const Color(0xFF9B59B6),
-                          ),
-                          
-                          const SizedBox(height: 24),
-                          
-                          // Order Status Stats
-                          const Text(
-                            'Thống kê Đơn hàng',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w600,
-                              color: Color(0xFF1A1A1A),
                             ),
-                          ),
-                          const SizedBox(height: 12),
-                          Container(
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(
-                                color: Colors.grey.shade200,
-                                width: 1,
-                              ),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.04),
-                                  blurRadius: 10,
-                                  offset: const Offset(0, 2),
+                            const SizedBox(height: 12),
+                            
+                            // Stats row - giống revenue page
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: _buildStatCard(
+                                    'Tổng Đơn Hàng',
+                                    '${_revenueData['totalOrders'] ?? 0}',
+                                    Icons.receipt_long,
+                                    Colors.blue,
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: _buildStatCard(
+                                    'Giá trị TB/Đơn',
+                                    _formatCurrency(_getDoubleValue(_revenueData['averageOrderValue'])),
+                                    Icons.trending_up,
+                                    Colors.purple,
+                                  ),
                                 ),
                               ],
                             ),
-                            child: Padding(
+                            const SizedBox(height: 20),
+                            
+                            // Order Status Stats - giống revenue page style
+                            Container(
                               padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(12),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.grey.shade200,
+                                    blurRadius: 4,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
+                              ),
                               child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  _buildOrderStatRow('Đơn mới', _orderStats['new'] ?? 0, Colors.orange),
-                                  const Divider(),
+                                  Row(
+                                    children: [
+                                      const Icon(Icons.analytics, color: Color(0xFF64B5F6)),
+                                      const SizedBox(width: 8),
+                                      const Text(
+                                        'Thống kê Đơn hàng',
+                                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 16),
+                                  _buildOrderStatRow('Đơn mới', _orderStats['new'] ?? 0, const Color(0xFFFFB74D)),
+                                  const SizedBox(height: 12),
                                   _buildOrderStatRow('Đang chế biến', _orderStats['cooking'] ?? 0, Colors.blue),
-                                  const Divider(),
+                                  const SizedBox(height: 12),
                                   _buildOrderStatRow('Hoàn thành', _orderStats['done'] ?? 0, Colors.green),
-                                  const Divider(),
+                                  const SizedBox(height: 12),
                                   _buildOrderStatRow('Đã thanh toán', _orderStats['paid'] ?? 0, Colors.purple),
                                 ],
                               ),
                             ),
-                          ),
-                        ],
+                            const SizedBox(height: 20),
+                          ],
+                        ),
                       ),
                     ),
         ),
@@ -367,111 +442,150 @@ class _OwnerReportsPageState extends State<OwnerReportsPage> {
     );
   }
 
-  Widget _buildStatCard({
-    required String title,
-    required String value,
-    required IconData icon,
-    required Color color,
-  }) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: Colors.grey.shade200,
-          width: 1,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
+  Widget _buildPeriodChip(String label, String value) {
+    final isSelected = _selectedPeriod == value;
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _selectedPeriod = value;
+          _loadReports();
+        });
+      },
       child: Container(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
-          gradient: LinearGradient(
-            colors: [Colors.white, color.withOpacity(0.03)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
+          color: isSelected ? const Color(0xFF64B5F6) : Colors.grey.shade200,
+          borderRadius: BorderRadius.circular(20),
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: color.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Icon(icon, color: color, size: 20),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Text(
-              title,
-              style: TextStyle(
-                fontSize: 13,
-                color: Colors.grey.shade600,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              value,
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: color,
-              ),
-            ),
-          ],
+        child: Text(
+          label,
+          style: TextStyle(
+            color: isSelected ? Colors.white : Colors.grey.shade700,
+            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildOrderStatRow(String label, int count, Color color) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  Widget _buildStatCard(
+    String title,
+    String value,
+    IconData icon,
+    Color color,
+  ) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.shade200,
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
               Container(
-                width: 12,
-                height: 12,
+                padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: color,
-                  shape: BoxShape.circle,
+                  color: color.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
                 ),
+                child: Icon(icon, color: color, size: 20),
               ),
-              const SizedBox(width: 12),
-              Text(
-                label,
-                style: const TextStyle(fontWeight: FontWeight.w500),
-              ),
+              const Spacer(),
             ],
           ),
+          const SizedBox(height: 12),
           Text(
-            '$count',
+            title,
             style: TextStyle(
+              color: Colors.grey.shade600,
+              fontSize: 13,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            style: TextStyle(
+              color: color,
               fontSize: 18,
               fontWeight: FontWeight.bold,
-              color: color,
             ),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildOrderStatRow(String label, int count, Color color) {
+    final totalOrders = (_orderStats['new'] ?? 0) + 
+                       (_orderStats['cooking'] ?? 0) + 
+                       (_orderStats['done'] ?? 0) + 
+                       (_orderStats['paid'] ?? 0);
+    final percent = totalOrders > 0 ? (count / totalOrders * 100) : 0;
+    
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(Icons.circle, color: color, size: 12),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: const TextStyle(fontWeight: FontWeight.w500),
+              ),
+              const SizedBox(height: 4),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(4),
+                child: LinearProgressIndicator(
+                  value: percent / 100,
+                  backgroundColor: Colors.grey.shade200,
+                  valueColor: AlwaysStoppedAnimation(color),
+                  minHeight: 6,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(width: 12),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            Text(
+              '$count',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: color,
+                fontSize: 16,
+              ),
+            ),
+            Text(
+              '${percent.toStringAsFixed(0)}%',
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.grey.shade600,
+              ),
+            ),
+          ],
+        ),
+      ],
     );
   }
 }

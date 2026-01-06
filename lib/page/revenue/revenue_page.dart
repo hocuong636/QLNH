@@ -152,7 +152,7 @@ class _RevenuePageState extends State<RevenuePage> with SingleTickerProviderStat
         return Theme(
           data: Theme.of(context).copyWith(
             colorScheme: ColorScheme.light(
-              primary: Colors.orange.shade600,
+              primary: const Color(0xFF64B5F6),
               onPrimary: Colors.white,
             ),
           ),
@@ -202,7 +202,7 @@ class _RevenuePageState extends State<RevenuePage> with SingleTickerProviderStat
       backgroundColor: Colors.grey.shade100,
       appBar: AppBar(
         title: const Text('Doanh thu'),
-        backgroundColor: Colors.orange.shade600,
+        backgroundColor: const Color(0xFF64B5F6),
         foregroundColor: Colors.white,
         elevation: 0,
         bottom: TabBar(
@@ -303,8 +303,8 @@ class _RevenuePageState extends State<RevenuePage> with SingleTickerProviderStat
             const SizedBox(height: 8),
             Text(
               '${DateFormat('dd/MM/yyyy').format(_startDate)} - ${DateFormat('dd/MM/yyyy').format(_endDate)}',
-              style: TextStyle(
-                color: Colors.orange.shade700,
+              style: const TextStyle(
+                color: Color(0xFF64B5F6),
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -321,7 +321,7 @@ class _RevenuePageState extends State<RevenuePage> with SingleTickerProviderStat
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          color: isSelected ? Colors.orange.shade600 : Colors.grey.shade200,
+          color: isSelected ? const Color(0xFF64B5F6) : Colors.grey.shade200,
           borderRadius: BorderRadius.circular(20),
         ),
         child: Text(
@@ -344,14 +344,14 @@ class _RevenuePageState extends State<RevenuePage> with SingleTickerProviderStat
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
             gradient: LinearGradient(
-              colors: [Colors.orange.shade500, Colors.deepOrange.shade400],
+              colors: [const Color(0xFF90CAF9), const Color(0xFF64B5F6)],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                color: Colors.orange.shade200,
+                color: const Color(0xFFBBDEFB).withOpacity(0.6),
                 blurRadius: 8,
                 offset: const Offset(0, 4),
               ),
@@ -619,7 +619,7 @@ class _RevenuePageState extends State<RevenuePage> with SingleTickerProviderStat
         children: [
           Row(
             children: [
-              Icon(Icons.analytics, color: Colors.orange.shade600),
+              const Icon(Icons.analytics, color: Color(0xFF64B5F6)),
               const SizedBox(width: 8),
               const Text(
                 'Tổng cộng (tất cả thời gian)',
@@ -631,7 +631,7 @@ class _RevenuePageState extends State<RevenuePage> with SingleTickerProviderStat
           _buildSummaryRow('Tổng doanh thu', _summary!.totalRevenue),
           _buildSummaryRow('Phí platform đã trả', _summary!.totalPlatformFee, isNegative: true),
           _buildSummaryRow('Đã nhận', _summary!.settledAmount, color: Colors.green),
-          _buildSummaryRow('Chờ thanh toán', _summary!.pendingSettlement, color: Colors.orange),
+          _buildSummaryRow('Chờ thanh toán', _summary!.pendingSettlement, color: const Color(0xFF64B5F6)),
           const Divider(height: 24),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -642,9 +642,9 @@ class _RevenuePageState extends State<RevenuePage> with SingleTickerProviderStat
               ),
               Text(
                 '${_summary!.totalTransactions} đơn',
-                style: TextStyle(
+                style: const TextStyle(
                   fontWeight: FontWeight.bold,
-                  color: Colors.orange.shade700,
+                  color: Color(0xFF64B5F6),
                 ),
               ),
             ],
@@ -738,7 +738,7 @@ class _RevenuePageState extends State<RevenuePage> with SingleTickerProviderStat
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
-          color: isSelected ? Colors.orange.shade600 : Colors.grey.shade200,
+          color: isSelected ? const Color(0xFF64B5F6) : Colors.grey.shade200,
           borderRadius: BorderRadius.circular(16),
         ),
         child: Text(
@@ -795,7 +795,7 @@ class _RevenuePageState extends State<RevenuePage> with SingleTickerProviderStat
               decoration: BoxDecoration(
                 color: record.status == 'settled' 
                     ? Colors.green.shade50 
-                    : Colors.orange.shade50,
+                    : const Color(0xFFE3F2FD),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Text(
@@ -804,7 +804,7 @@ class _RevenuePageState extends State<RevenuePage> with SingleTickerProviderStat
                   fontSize: 11,
                   color: record.status == 'settled' 
                       ? Colors.green.shade700 
-                      : Colors.orange.shade700,
+                      : const Color(0xFF64B5F6),
                   fontWeight: FontWeight.w500,
                 ),
               ),
@@ -843,10 +843,10 @@ class _RevenuePageState extends State<RevenuePage> with SingleTickerProviderStat
                     const Text('Thực nhận', style: TextStyle(fontSize: 11)),
                     Text(
                       '${_formatCurrency(record.restaurantAmount)} đ',
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
-                        color: Colors.orange.shade700,
+                        color: Color(0xFF64B5F6),
                       ),
                     ),
                   ],
